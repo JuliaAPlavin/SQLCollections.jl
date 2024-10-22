@@ -43,6 +43,9 @@ Base.collect(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> co
 (::Type{Array})(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> rowtable
 (::Type{Vector})(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> rowtable
 
+Tables.istable(::Type{DBCollection}) = true
+Tables.columnaccess(::Type{DBCollection}) = true
+Tables.columns(dbc::DBCollection) = Tables.columns(DBInterface.execute(dbc.conn, dbc.query))
 
 include("func_to_funsql.jl")
 include("readfuncs.jl")
