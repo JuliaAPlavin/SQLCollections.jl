@@ -35,3 +35,4 @@ aggfunc_to_funsql(f::ComposedFunction, arg) = aggfunc_to_funsql(f.outer, func_to
 aggfunc_to_funsql(::typeof(minimum), arg) = Agg.min(arg)
 aggfunc_to_funsql(::typeof(maximum), arg) = Agg.max(arg)
 aggfunc_to_funsql(::typeof(sum), arg) = Agg.sum(arg)
+aggfunc_to_funsql(::typeof(length), arg) = Agg.count()
