@@ -15,10 +15,12 @@ struct DBCollection
     query::FunSQL.AbstractSQLNode
 end
 
-DBCollection(conn, tbl::Union{Symbol,AbstractString}) = DBCollection(
+DBCollection(conn, tbl::FunSQL.AbstractSQLNode) = DBCollection(
     FunSQL.DB(conn; catalog=FunSQL.reflect(conn)),
-    From(Symbol(tbl))
+    tbl
 )
+
+DBCollection(conn, tbl::Union{Symbol,AbstractString}) = DBCollection(conn, From(Symbol(tbl)))
 
 colnames(dbc::DBCollection) = colnames(dbc.query; dbc.conn.catalog)
 colnames(q; catalog=nothing) = keys(q.label_map)
