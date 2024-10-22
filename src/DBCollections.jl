@@ -1,0 +1,3 @@
+module DBCollections
+
+end
