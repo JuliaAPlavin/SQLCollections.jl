@@ -13,13 +13,6 @@ func_to_funsql(f::Base.Fix2, arg) = getproperty(Fun, nameof(f.f))(arg, f.x)
 func_to_funsql(f::Base.Fix1, arg) = getproperty(Fun, nameof(f.f))(f.x, arg)
 func_to_funsql(f::Function, arg) = getproperty(Fun, nameof(f))(arg)
 
-func_to_funsql(f::Union{typeof.([
-	# mean,
-	sum,
-	maximum,
-	minimum,
-])...}, arg) = getproperty(Agg, nameof(f))(arg)
-
 funcs_to_funsql(f::AccessorsExtra.ContainerOptic) = map(func_to_funsql, f.optics)
 
 func_to_funsql(f::⩓, arg) = Fun.and(func_to_funsql(f.f, arg), func_to_funsql(f.g, arg))
