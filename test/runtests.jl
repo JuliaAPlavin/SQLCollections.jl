@@ -48,7 +48,7 @@ using TestItemRunner
             (@f map(@o (a=_.j + 1,)) collect),
             (@f map(@o (a=_.j * 10, b=_.i + 1)) collect),
             (@f map(@o (a=_.j * 10, b=_.i + _.j + 1)) collect),
-            (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) collect),
+            (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i))) collect),
             ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt))) collect),
             (@f mapinsert(a=@o Float64(_.i) / 2) collect),
             (@f mapset(i=@o round(2*_.j)) collect),
