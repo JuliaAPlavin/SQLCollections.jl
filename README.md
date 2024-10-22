@@ -40,7 +40,7 @@ The API consists of regular functions. This also makes DBCollections.jl play nic
 
 DBCollections.jl is the only package allowing to reuse the code written for regular Julia collections to operate on database tables as well. \
 Still, there are many other packages with roughly similar goals of providing convenient access to SQL databases from Julia. Here, we briefly compare them in terms of main differences and the code size (LOC excluding tests); some Python packages are also included.
-  - **DBCollections.jl**: ~200 LOC *(although still growing)*
+  - **DBCollections.jl**: ~250 LOC *(although still growing)*
   - SQLStore.jl: syntax similar to regular Julia, but not 100% and only supports tables created by itself; ~500 LOC
   - dplython: ~700
   - Relationals.jl: ~1200
@@ -49,7 +49,6 @@ Still, there are many other packages with roughly similar goals of providing con
   - datar: ~2300
   - PostgresORM.jl: ~2500
   - TidierDB.jl: for those coming from R; ~4000 LOC
-  - FunSQL.jl: provides unified access to SQL databases, mature and independently maintained, used by DBCollections.jl; ~6500 LOC
   - Blaze: ~10000
   - Ibis: ~43000
 
