@@ -1,6 +1,6 @@
 # see also FlexiGroupsExt.jl
 
-struct DBCollectionGrouped
+struct SQLCollectionGrouped
     conn::DBInterface.Connection
     query::FunSQL.AbstractSQLNode
     keyf

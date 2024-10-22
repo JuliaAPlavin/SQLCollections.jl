@@ -19,13 +19,13 @@ using TestItemRunner
         # SQLCipher.DB(),
         DuckDB.DB(),
     ]
-        tbl = DBCollection(db, :mytbl)
+        tbl = SQLCollection(db, :mytbl)
         @test !exists(tbl)
-        @test !exists(DBCollection(db, "mytbl"))
+        @test !exists(SQLCollection(db, "mytbl"))
         @test copy!(tbl, data) === tbl
-        tbl = DBCollection(db, :mytbl)
+        tbl = SQLCollection(db, :mytbl)
         @test exists(tbl)
-        @test exists(DBCollection(db, "mytbl"))
+        @test exists(SQLCollection(db, "mytbl"))
 
         @testset for f in [
             identity,
@@ -122,14 +122,14 @@ end
     using IntervalSets
     using Statistics
 
-    data = [(;i, j=i/10) for i in 1:10] |> DBCollections.StructArray
+    data = [(;i, j=i/10) for i in 1:10] |> SQLCollections.StructArray
 
     @testset for db in [
         SQLite.DB(),
         DuckDB.DB(),
     ]
-        copy!(DBCollection(db, :mytbl), data)
-        tbl = DBCollection(db, :mytbl)
+        copy!(SQLCollection(db, :mytbl), data)
+        tbl = SQLCollection(db, :mytbl)
         @testset for f in [
             (@f group_vg(@o (a=round(_.i / 3.5),)) map(key) collect),
             # (@f group_vg(@o _[(:i,)]) map(key) collect),
@@ -144,8 +144,8 @@ end
 
 @testitem "_" begin
     import Aqua
-    Aqua.test_all(DBCollections; ambiguities=false)
-    Aqua.test_ambiguities(DBCollections)
+    Aqua.test_all(SQLCollections; ambiguities=false)
+    Aqua.test_ambiguities(SQLCollections)
 
     import CompatHelperLocal as CHL
     CHL.@check(checktest=false)

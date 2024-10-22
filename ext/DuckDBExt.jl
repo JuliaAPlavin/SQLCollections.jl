@@ -1,7 +1,7 @@
 module DuckDBExt
 
 using DuckDB
-import DBCollections: _copy_impl!
+import SQLCollections: _copy_impl!
 
 function _copy_impl!(conn::DuckDB.DB, rows, tblname::Symbol)
 	tmp_tblname = String(rand('a':'z', 50))
