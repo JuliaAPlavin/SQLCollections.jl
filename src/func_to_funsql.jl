@@ -47,6 +47,7 @@ func_to_funsql(f::Base.Fix2{typeof(replace),<:Pair{<:AbstractString,<:AbstractSt
 func_to_funsql(f::Base.Fix2{typeof(replace),<:Pair{<:Regex,<:AbstractString}}, arg) = Fun.regexp_replace(arg, f.x[1].pattern, f.x[2])
 
 
+func_to_funsql(::typeof(isempty), arg) = func_to_funsql(==(""), arg)  # XXX: only handles strings, anything else can be isempty?
 func_to_funsql(f::typeof(lowercase), arg) = Fun.lower(arg)
 func_to_funsql(f::typeof(uppercase), arg) = Fun.upper(arg)
 func_to_funsql(f::typeof(strip), arg) = Fun.trim(arg)
