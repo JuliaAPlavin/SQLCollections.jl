@@ -27,42 +27,68 @@ using TestItemRunner
         @test exists(DBCollection(db, "mytbl"))
 
         @testset for f in [
+            identity,
+            (@f filter(@o _.i > 7)),
+            (@f filter(@o _.i ≥ 7)),
+            (@f filter(@o _.i < 2)),
+            (@f filter(@o _.i ≤ 2)),
+            (@f filter(@o _.i == 2)),
+            (@f filter(@o _.i != 2)),
+            (@f filter(@o 1 ≤ _.i < 5)),
+            (@f filter(@o _.j ∈ 0.25..0.75)),
+            (@f filter(@o _.j ∉ 0.25..0.75)),
+            (@f filter(@o _.j ∈ (0.1, 0.5, 0.6))),
+            (@f filter(@o _.j ∉ [0.1, 0.5, 0.6])),
+            (@f filter(@o _.j < _.i)),
+            (@f filter(@o _.j < _.i && _.j ∈ 0.1..0.6)),
+            # (@f filter(@o _.j ∈ (0.1, _.i))),
+            # (@f filter(@o _.j ∈ 0.1.._.i)),
+            ([DuckDB.DB], @f filter(@o year(_.d) > 2005)),
+            ([DuckDB.DB], @f filter(@o _.d > Date(2005))),
+            (@f map(@o (a=_.j + 1,))),
+            (@f map(@o (a=_.j * 10, b=_.i + 1))),
+            (@f map(@o (a=_.j * 10, b=_.i + _.j + 1))),
+            (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i)))),
+            ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt)))),
+            (@f map(@o _[(:j, :i)])),
+            # (@f map(@o (;_[(:j, :i)]...))),
+            (@f mapinsert(a=@o Float64(_.i) / 2)),
+            (@f mapset(i=@o round(2*_.j))),
+            (@f filter(@o _.i != 2) map(@o (a=ifelse(_.i > 6, 1, 0),)) filter(@o _.a == 1)),
+            (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) unique()),
+            (@f map(@o (a=string(_.i, "%"), b=string("x: ", _.j), c=string("y: ", _.i*10, " kg")))),
+            (@f sort(by=(@o _.i))),
+            (@f sort(by=(@o _.i), rev=true)),
+            (@f filter(@o _.j ∈ (0.1, 0.5, 0.6) || _.i > 8) sort(by=(@o _.i))),
+            (@f sort(by=(@o (_.i, -_.j)), rev=true) first(__, 2)),
+            (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first(__, 2)),
+        ]
+            if f isa Tuple
+                dbs, f = f
+                any(db_ -> db isa db_, dbs) || continue
+            end
+            # @info "" f(tbl) f(data)
+            cf = collect(f(tbl))
+            @test issetequal(cf, f(data))
+            @test cf == f(data)
+
+            @testset for g in [
+                Array,
+                Vector,
+                StructArray,
+                DictArray,
+            ]
+                gf = g(f(tbl))
+                gd = g(f(data))
+                @test nameof(typeof(gf)) == nameof(typeof(gd))
+                @test gf == gd
+            end
+        end
+
+        @testset for f in [
             # length,
-            collect,
             (@f count(Returns(true))),
             (@f count(@o _.i > 7)),
-            (@f filter(@o _.i > 7) collect),
-            (@f filter(@o _.i ≥ 7) collect),
-            (@f filter(@o _.i < 2) collect),
-            (@f filter(@o _.i ≤ 2) collect),
-            (@f filter(@o _.i == 2) collect),
-            (@f filter(@o _.i != 2) collect),
-            (@f filter(@o 1 ≤ _.i < 5) collect),
-            (@f filter(@o _.j ∈ 0.25..0.75) collect),
-            (@f filter(@o _.j ∉ 0.25..0.75) collect),
-            (@f filter(@o _.j ∈ (0.1, 0.5, 0.6)) collect),
-            (@f filter(@o _.j ∉ [0.1, 0.5, 0.6]) collect),
-            (@f filter(@o _.j < _.i) collect),
-            (@f filter(@o _.j < _.i && _.j ∈ 0.1..0.6) collect),
-            # (@f filter(@o _.j ∈ (0.1, _.i)) collect),
-            # (@f filter(@o _.j ∈ 0.1.._.i) collect),
-            ([DuckDB.DB], @f filter(@o year(_.d) > 2005) collect),
-            ([DuckDB.DB], @f filter(@o _.d > Date(2005)) collect),
-            (@f map(@o (a=_.j + 1,)) collect),
-            (@f map(@o (a=_.j * 10, b=_.i + 1)) collect),
-            (@f map(@o (a=_.j * 10, b=_.i + _.j + 1)) collect),
-            (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i))) collect),
-            ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt))) collect),
-            (@f mapinsert(a=@o Float64(_.i) / 2) collect),
-            (@f mapset(i=@o round(2*_.j)) collect),
-            (@f filter(@o _.i != 2) map(@o (a=ifelse(_.i > 6, 1, 0),)) filter(@o _.a == 1) collect),
-            (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) unique() collect),
-            (@f map(@o (a=string(_.i, "%"), b=string("x: ", _.j), c=string("y: ", _.i*10, " kg"))) collect),
-            (@f sort(by=(@o _.i)) collect),
-            (@f sort(by=(@o _.i), rev=true) collect),
-            (@f filter(@o _.j ∈ (0.1, 0.5, 0.6) || _.i > 8) sort(by=(@o _.i)) collect),
-            (@f sort(by=(@o (_.i, -_.j)), rev=true) first(__, 2) collect),
-            (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first(__, 2) collect),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first(__, 1) only),
             (@f mean(@o _.i)),
@@ -77,16 +103,6 @@ using TestItemRunner
             end
             # @info "" f(tbl) f(data)
             @test issetequal(f(tbl), f(data))
-            @test f(tbl) == f(data)
-        end
-
-        @testset for f in [
-            Array,
-            Vector,
-            StructArray,
-            DictArray,
-        ]
-            @test nameof(typeof(f(tbl))) == nameof(typeof(f(data)))
             @test f(tbl) == f(data)
         end
     end
