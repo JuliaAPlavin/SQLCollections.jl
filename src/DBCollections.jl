@@ -15,9 +15,9 @@ struct DBCollection
     query::FunSQL.AbstractSQLNode
 end
 
-DBCollection(conn, tbl::Symbol) = DBCollection(
+DBCollection(conn, tbl::Union{Symbol,AbstractString}) = DBCollection(
     FunSQL.DB(conn; catalog=FunSQL.reflect(conn)),
-    From(tbl)
+    From(Symbol(tbl))
 )
 
 colnames(dbc::DBCollection) = colnames(dbc.query; dbc.conn.catalog)
