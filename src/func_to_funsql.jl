@@ -34,6 +34,16 @@ func_to_funsql(f::Base.Fix1{typeof(string)}, arg) = Fun.concat(f.x, arg)
 func_to_funsql(f::AccessorsExtra.FixArgs{typeof(string)}, arg) = Fun.concat(map(a -> a isa AccessorsExtra.Placeholder ? arg : a, f.args)...)
 
 
+func_to_funsql(f::AccessorsExtra.PropertyFunction, arg) = @p let
+	f.expr
+	@modify(__ |> RecursiveOfType(Expr; order=:pre) |> If(e -> Base.isexpr(e, :call)) |> _.args[1]) do func
+		:($Fun.$func)
+	end
+	@set __ |> RecursiveOfType(Symbol) |> If(==(:_)) = something(arg, Get)
+	eval()
+end
+
+
 aggfunc_to_funsql(f) = aggfunc_to_funsql(f, nothing)
 aggfunc_to_funsql(f::ComposedFunction, arg) = aggfunc_to_funsql(f.outer, func_to_funsql(f.inner, arg))
 aggfunc_to_funsql(::typeof(minimum), arg) = Agg.min(arg)
