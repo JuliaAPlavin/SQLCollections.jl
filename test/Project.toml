@@ -2,6 +2,7 @@
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 CompatHelperLocal = "5224ae11-6099-4aaa-941d-3aab004bd678"
 DataManipulation = "38052440-ad76-4236-8414-61389b2c5143"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DuckDB = "d2f5444f-75bc-4fdf-ac35-56f514c445e1"
 IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
 SQLCipher = "e3bbf2a3-a30c-4959-806c-295e8e13e4d8"
