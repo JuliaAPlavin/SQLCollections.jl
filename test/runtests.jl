@@ -13,6 +13,15 @@ using TestItemRunner
     using StructArrays
     using DictArrays
 
+    function eltype_compatible(sql_T, mem_T)
+        sql_T == mem_T && return true
+        if isconcretetype(sql_T) && sql_T <: NamedTuple && mem_T <: NamedTuple
+            return fieldnames(sql_T) == fieldnames(mem_T)
+        end
+        @warn "" sql_T mem_T
+        return false
+    end
+
     # using Logging; ConsoleLogger(stdout, Logging.Debug) |> global_logger
 
     data = [(;i, j=i/10, s=string('a'+i-1)^i, d=Date(2000+i, i, 2i), dt=DateTime(2000+i, i, 2i, i, 3i, 4i)) for i in 1:10]
@@ -86,6 +95,7 @@ using TestItemRunner
             cf = collect(f(tbl))
             @test issetequal(cf, f(data))
             @test isequal(cf, f(data))
+            @test eltype_compatible(eltype(f(tbl)), eltype(f(data)))
 
             @testset for g in [
                 Array,
