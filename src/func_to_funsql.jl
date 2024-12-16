@@ -41,6 +41,7 @@ _escape_for_like(s::AbstractString) = replace(s, '%' => "\\%", '_' => "\\_")
 # func_to_funsql(f::Base.Fix2{typeof(contains),<:Regex}, arg) = Fun.regexp_like(arg, string(f.x))
 func_to_funsql(f::Base.Fix1{typeof(occursin)}, arg) = func_to_funsql(contains(f.x), arg)
 
+# see https://github.com/JuliaLang/julia/pull/29643 for regex escaping
 func_to_funsql(f::Base.Fix2{typeof(replace),<:Pair{<:AbstractString,<:AbstractString}}, arg) = Fun.regexp_replace(arg, replace(f.x[1], r"([()[\]{}?*+\-|^\$\\.&~#\s=!<>|:])" => s"\\\1"), f.x[2])
 func_to_funsql(f::Base.Fix2{typeof(replace),<:Pair{<:Regex,<:AbstractString}}, arg) = Fun.regexp_replace(arg, f.x[1].pattern, f.x[2])
 
