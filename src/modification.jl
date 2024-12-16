@@ -1,4 +1,4 @@
-function Base.push!(dbc::DBCollection, row::NamedTuple)
+function Base.push!(dbc::SQLCollection, row::NamedTuple)
 	@assert dbc.query[] isa FunSQL.FromNode
 	tblname = dbc.query[].source::Symbol
 	names = colnames(dbc)
@@ -7,7 +7,7 @@ function Base.push!(dbc::DBCollection, row::NamedTuple)
 	return dbc
 end
 
-function Base.copy!(dbc::DBCollection, rows)
+function Base.copy!(dbc::SQLCollection, rows)
 	@assert dbc.query[] isa FunSQL.FromNode
 	tblname = dbc.query[].source::Symbol
 	_copy_impl!(dbc.conn.raw, rows, tblname)

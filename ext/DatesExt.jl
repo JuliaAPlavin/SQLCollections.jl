@@ -1,7 +1,7 @@
 module DatesExt
 
 using Dates
-import DBCollections: Fun, func_to_funsql
+import SQLCollections: Fun, func_to_funsql
 
 func_to_funsql(::typeof(year), arg) = Fun.extract("YEAR", arg)
 func_to_funsql(::typeof(month), arg) = Fun.extract("MONTH", arg)
