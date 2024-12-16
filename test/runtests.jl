@@ -9,10 +9,13 @@ using TestItemRunner
     using IntervalSets
     using Statistics
     using Dates
+    using Printf: format, Format
     using StructArrays
     using DictArrays
 
-    data = [(;i, j=i/10, d=Date(2000+i, i, 2i), dt=DateTime(2000+i, i, 2i, i, 3i, 4i)) for i in 1:10]
+    # using Logging; ConsoleLogger(stdout, Logging.Debug) |> global_logger
+
+    data = [(;i, j=i/10, s=string('a'+i-1)^i, d=Date(2000+i, i, 2i), dt=DateTime(2000+i, i, 2i, i, 3i, 4i)) for i in 1:10]
 
     @testset for db in [
         SQLite.DB(),
@@ -51,6 +54,7 @@ using TestItemRunner
             (@f map(@o (a=_.j * 10, b=_.i + _.j + 1))),
             (@f map(@o (a=_.j > 5, b=_.i + _.j + 1))),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i)))),
+            (@f map(@o (a=missing, b=ifelse(_.i > 6, 1, missing), c=ismissing(ifelse(_.i > 6, 1, missing)), d=coalesce(ifelse(_.i > 6, 1, missing), 123)))),
             ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt)))),
             (@f map(@o _[(:j, :i)])),
             (@f map(@o _[sr"d.*"])),
@@ -61,7 +65,13 @@ using TestItemRunner
             (@f filter(@o _.i != 2) map(@o (a=ifelse(_.i > 6, 1, 0),)) filter(@o _.a == 1)),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) unique()),
             # (@f unique(@o _.i > 6)),
-            (@f map(@o (a=string(_.i, "%"), b=string("x: ", _.j), c=string("y: ", _.i*10, " kg")))),
+            (@f map(@o (a=string(_.i, "%"), b=string("x: ", _.j) * " and", c=string("y: ", _.i*10, " kg")))),
+            (@f map(@o (a=uppercase(_.s), b=lowercase(_.s * "XX")))),
+            (@f map(@o (a=startswith(_.s, "cc"), b=endswith(_.s, "dd"), d=occursin("eee", _.s), e=startswith(_.s, "a%")))),
+            ([DuckDB.DB], @f map(@o (a=occursin("EeE", _.s), b=replace(_.s, r"e+" => "xxx"), c=replace(_.s, "e+" => "xxx"), d=replace(_.s, "bb" => "xxx")))),
+            (@f map(@o (a=format(Format("x %d"), _.i),))),
+            (@f map(@o (a=" abc" * _.s * " def  ",)) map(@o (a=strip(_.a), b=lstrip(_.a), c=rstrip(_.a)))),
+            (@f map(@o (a=" abc" * _.s * " def  ",)) map(@o (a=strip(_.a, ' '), b=lstrip(_.a, ['a',' ','x']), c=rstrip(_.a, ['f',' ','x'])))),
             (@f sort(by=(@o _.i))),
             (@f sort(by=(@o _.i), rev=true)),
             (@f filter(@o _.j ∈ (0.1, 0.5, 0.6) || _.i > 8) sort(by=(@o _.i))),
@@ -75,7 +85,7 @@ using TestItemRunner
             # @info "" f(tbl) f(data)
             cf = collect(f(tbl))
             @test issetequal(cf, f(data))
-            @test cf == f(data)
+            @test isequal(cf, f(data))
 
             @testset for g in [
                 Array,
@@ -86,7 +96,7 @@ using TestItemRunner
                 gf = g(f(tbl))
                 gd = g(f(data))
                 @test nameof(typeof(gf)) == nameof(typeof(gd))
-                @test gf == gd
+                @test isequal(gf, gd)
             end
         end
 

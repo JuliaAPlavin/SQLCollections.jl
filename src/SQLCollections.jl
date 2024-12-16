@@ -13,6 +13,11 @@ export SQLCollection, exists
 struct SQLCollection
     conn::FunSQL.SQLConnection
     query::FunSQL.AbstractSQLNode
+
+    function SQLCollection(conn::FunSQL.SQLConnection, query::FunSQL.AbstractSQLNode)
+        @debug "creating SQLCollection" query
+        new(conn, query)
+    end
 end
 
 SQLCollection(conn, tbl::FunSQL.AbstractSQLNode) = SQLCollection(
@@ -51,5 +56,7 @@ include("func_to_funsql.jl")
 include("readfuncs.jl")
 include("modification.jl")
 include("grouped.jl")
+
+include("../ext/PrintfExt.jl")
 
 end
