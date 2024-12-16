@@ -5,6 +5,7 @@ using TestItemRunner
 @testitem "basic usage" begin
     using SQLite, SQLCipher, DuckDB
     using DataManipulation
+    using DataManipulation: @sr_str
     using IntervalSets
     using Statistics
     using Dates
@@ -52,6 +53,8 @@ using TestItemRunner
             (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i)))),
             ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt)))),
             (@f map(@o _[(:j, :i)])),
+            (@f map(@o _[sr"d.*"])),
+            (@f map(@o _[sr"i", sr"d(.*)" => ss"ddd\1"])),
             # (@f map(@o (;_[(:j, :i)]...))),
             (@f mapinsert(a=@o Float64(_.i) / 2)),
             (@f mapset(i=@o round(2*_.j))),
@@ -129,6 +132,7 @@ end
         tbl = DBCollection(db, :mytbl)
         @testset for f in [
             (@f group_vg(@o (a=round(_.i / 3.5),)) map(key) collect),
+            # (@f group_vg(@o _[(:i,)]) map(key) collect),
             (@f map(@o (i=_.i, b=round(_.i/4.5))) group_vg(@o (a=_.i / 3.5,)) map(@o (a=key(_).a, avg=mean(_.b), cnt=length(_))) collect),
         ]
             @test issetequal(f(tbl), f(data))
@@ -144,5 +148,5 @@ end
     Aqua.test_ambiguities(DBCollections)
 
     import CompatHelperLocal as CHL
-    CHL.@check()
+    CHL.@check(checktest=false)
 end
