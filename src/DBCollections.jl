@@ -36,12 +36,12 @@ exists(dbc::DBCollection) =
         rethrow()
     end
 
-Base.collect(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> columntable |> StructArray
+Base.collect(dbc::DBCollection) = StructArray(dbc)
 
-(::Type{StructArray})(dbc::DBCollection) = collect(dbc)
-(::Type{StructVector})(dbc::DBCollection) = collect(dbc)
+(::Type{StructArray})(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> columntable |> StructArray
+(::Type{StructVector})(dbc::DBCollection) = StructArray(dbc)
 (::Type{Array})(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> rowtable
-(::Type{Vector})(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> rowtable
+(::Type{Vector})(dbc::DBCollection) = Array(dbc)
 
 Tables.istable(::Type{DBCollection}) = true
 Tables.columnaccess(::Type{DBCollection}) = true
