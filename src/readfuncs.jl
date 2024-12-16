@@ -3,6 +3,9 @@ Base.filter(pred, dbc::DBCollection) = @modify(dbc.query) do q
 end
 
 Base.map(func, dbc::DBCollection) = error("DBCollections: mapping $func not supported")
+Base.map(func::Accessors.IndexLens{<:Tuple{NTuple{<:Any,Symbol}}}, dbc::DBCollection) = @modify(dbc.query) do q
+	q |> Select(only(func.indices)...)
+end
 Base.map(func::AccessorsExtra.ContainerOptic{<:NamedTuple}, dbc::DBCollection) = @modify(dbc.query) do q
 	q |> Select(map(keys(func.optics), values(func.optics)) do k, o
 		k => func_to_funsql(o)
