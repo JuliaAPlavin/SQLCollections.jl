@@ -85,7 +85,7 @@ using TestItemRunner
             (@f sort(by=(@o _.i), rev=true)),
             (@f filter(@o _.j ∈ (0.1, 0.5, 0.6) || _.i > 8) sort(by=(@o _.i))),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) first(__, 2)),
-            (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first(__, 2)),
+            (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) Iterators.take(__, 2) first(__, 3)),
         ]
             if f isa Tuple
                 dbs, f = f

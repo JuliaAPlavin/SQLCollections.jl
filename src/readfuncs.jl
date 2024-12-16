@@ -27,7 +27,9 @@ Base.unique(dbc::SQLCollection) = @modify(dbc.query) do q
 	q |> Group(colnames(dbc)...) |> Select(colnames(dbc)...)
 end
 
-Base.first(dbc::SQLCollection, n::Integer) = @modify(dbc.query) do q
+Base.first(dbc::SQLCollection, n::Integer) = Iterators.take(dbc, n)
+
+Iterators.take(dbc::SQLCollection, n::Integer) = @modify(dbc.query) do q
 	q |> Limit(n)
 end
 
