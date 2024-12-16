@@ -29,6 +29,10 @@ func_to_funsql(f::AccessorsExtra.FixArgsT(ifelse, (AccessorsExtra.Placeholder, A
 
 func_to_funsql(::Type{Float64}, arg) = Fun.cast(arg, "REAL")
 
+func_to_funsql(f::Base.Fix2{typeof(string)}, arg) = Fun.concat(arg, f.x)
+func_to_funsql(f::Base.Fix1{typeof(string)}, arg) = Fun.concat(f.x, arg)
+func_to_funsql(f::AccessorsExtra.FixArgs{typeof(string)}, arg) = Fun.concat(map(a -> a isa AccessorsExtra.Placeholder ? arg : a, f.args)...)
+
 
 aggfunc_to_funsql(f) = aggfunc_to_funsql(f, nothing)
 aggfunc_to_funsql(f::ComposedFunction, arg) = aggfunc_to_funsql(f.outer, func_to_funsql(f.inner, arg))

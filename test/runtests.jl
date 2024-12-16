@@ -43,6 +43,7 @@ using TestItemRunner
             (@f mapset(i=@o round(2*_.j)) collect),
             (@f filter(@o _.i != 2) map(@o (a=ifelse(_.i > 6, 1, 0),)) filter(@o _.a == 1) collect),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) unique() collect),
+            (@f map(@o (a=string(_.i, "%"), b=string("x: ", _.j), c=string("y: ", _.i*10, " kg"))) collect),
             (@f sort(by=(@o _.i)) collect),
             (@f sort(by=(@o _.i), rev=true) collect),
             (@f filter(@o _.j ∈ (0.1, 0.5, 0.6) || _.i > 8) sort(by=(@o _.i)) collect),
