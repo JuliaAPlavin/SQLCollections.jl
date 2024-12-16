@@ -8,6 +8,8 @@ using TestItemRunner
     using IntervalSets
     using Statistics
     using Dates
+    using StructArrays
+    using DictArrays
 
     data = [(;i, j=i/10, d=Date(2000+i, i, 2i), dt=DateTime(2000+i, i, 2i, i, 3i, 4i)) for i in 1:10]
 
@@ -23,6 +25,7 @@ using TestItemRunner
         tbl = DBCollection(db, :mytbl)
         @test exists(tbl)
         @test exists(DBCollection(db, "mytbl"))
+
         @testset for f in [
             # length,
             collect,
@@ -74,6 +77,16 @@ using TestItemRunner
             end
             # @info "" f(tbl) f(data)
             @test issetequal(f(tbl), f(data))
+            @test f(tbl) == f(data)
+        end
+
+        @testset for f in [
+            Array,
+            Vector,
+            StructArray,
+            DictArray,
+        ]
+            @test nameof(typeof(f(tbl))) == nameof(typeof(f(data)))
             @test f(tbl) == f(data)
         end
     end
