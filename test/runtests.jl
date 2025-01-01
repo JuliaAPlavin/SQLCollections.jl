@@ -24,7 +24,7 @@ using TestItemRunner
 
     # using Logging; ConsoleLogger(stdout, Logging.Debug) |> global_logger
 
-    data = [(;i, j=i/10, s=string('a'+i-1)^i, d=Date(2000+i, i, 2i), dt=DateTime(2000+i, i, 2i, i, 3i, 4i)) for i in 1:10]
+    data = [(;i, j=i/10, s=string('a'+i-1)^(i-1), d=Date(2000+i, i, 2i), dt=DateTime(2000+i, i, 2i, i, 3i, 4i)) for i in 1:10]
 
     @testset for db in [
         SQLite.DB(),
@@ -75,7 +75,7 @@ using TestItemRunner
             (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) unique()),
             # (@f unique(@o _.i > 6)),
             (@f map(@o (a=string(_.i, "%"), b=string("x: ", _.j) * " and", c=string("y: ", _.i*10, " kg")))),
-            (@f map(@o (a=uppercase(_.s), b=lowercase(_.s * "XX")))),
+            (@f map(@o (a=uppercase(_.s), b=lowercase(_.s * "XX"), c=isempty(_.s)))),
             (@f map(@o (a=startswith(_.s, "cc"), b=endswith(_.s, "dd"), d=occursin("eee", _.s), e=startswith(_.s, "a%")))),
             ([DuckDB.DB], @f map(@o (a=occursin("EeE", _.s), b=replace(_.s, r"e+" => "xxx"), c=replace(_.s, "e+" => "xxx"), d=replace(_.s, "bb" => "xxx")))),
             (@f map(@o (a=format(Format("x %d"), _.i),))),
