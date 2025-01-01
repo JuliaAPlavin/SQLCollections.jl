@@ -18,9 +18,11 @@ using TestItemRunner
     ]
         tbl = DBCollection(db, :mytbl)
         @test !exists(tbl)
+        @test !exists(DBCollection(db, "mytbl"))
         @test copy!(tbl, data) === tbl
         tbl = DBCollection(db, :mytbl)
         @test exists(tbl)
+        @test exists(DBCollection(db, "mytbl"))
         @testset for f in [
             # length,
             collect,
