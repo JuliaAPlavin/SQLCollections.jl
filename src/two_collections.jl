@@ -1,0 +1,46 @@
+function Base.vcat(dbcs::SQLCollection...)
+    @assert all(dbc -> dbc.conn === first(dbcs).conn, dbcs)
+    @assert all(dbc -> colnames(dbc) == colnames(first(dbcs)), dbcs)
+    dbc_a = first(dbcs)
+    qs_rest = map(dbc -> dbc.query, Base.tail(dbcs))
+    @modify(dbc_a.query) do q_a
+        q_a |> Append(qs_rest...)
+    end
+end
+
+# can use SQL UNION / INTERSECT / EXCEPT?
+
+function Base.intersect(dbc_a::SQLCollection, dbc_b::SQLCollection)
+    @assert dbc_a.conn === dbc_b.conn
+    cols = collect(colnames(dbc_a))
+    @assert issetequal(cols, colnames(dbc_b))
+    jcond = Fun.and(map(col -> Fun.:(==)(Get[col], Get.b[col]), cols)...)
+    q_b = dbc_b.query
+    @modify(dbc_a.query) do q_a
+        q_a |> Join(:b => dbc_b.query, jcond)
+    end
+end
+
+function Base.union(dbc_a::SQLCollection, dbc_b::SQLCollection)
+    @assert dbc_a.conn === dbc_b.conn
+    cols = collect(colnames(dbc_a))
+    @assert issetequal(cols, colnames(dbc_b))
+    jcond = Fun.or(map(col -> Fun.:(==)(Get[col], Get.b[col]), cols)...)
+    sels = map(col -> col => Fun.coalesce(Get[col], Get.b[col]), cols)
+    q_b = dbc_b.query
+    @modify(dbc_a.query) do q_a
+        q_a |> Join(:b => dbc_b.query, jcond, left=true, right=true) |> Select(sels...)
+    end
+end
+
+function Base.setdiff(dbc_a::SQLCollection, dbc_b::SQLCollection)
+    @assert dbc_a.conn === dbc_b.conn
+    cols = collect(colnames(dbc_a))
+    @assert issetequal(cols, colnames(dbc_b))
+    jcond = Fun.and(map(col -> Fun.:(==)(Get[col], Get.b[col]), cols)...)
+    wcond = Fun.and(map(col -> Fun.is_null(Get.b[col]), cols)...)
+    q_b = dbc_b.query
+    @modify(dbc_a.query) do q_a
+        q_a |> Join(:b => dbc_b.query, jcond, left=true) |> Where(wcond)
+    end
+end

@@ -113,6 +113,38 @@ using TestItemRunner
         end
 
         @testset for f in [
+            function (data)
+                d1 = @p data filter(@o _.j > 0.3) map(@o (x=_.i,))
+                d2 = @p data filter(@o _.j < 0.8) map(@o (x=_.i,))
+                vcat(d1, d2)
+            end,
+            function (data)
+                d1 = @p data filter(@o _.j > 0.3) map(@o (x=_.i,))
+                d2 = @p data filter(@o _.j < 0.8) map(@o (x=_.i,))
+                union(d1, d2)
+            end,
+            function (data)
+                d1 = @p data filter(@o _.j > 0.3) map(@o (x=_.i,))
+                d2 = @p data filter(@o _.j < 0.8) map(@o (x=_.i,))
+                intersect(d1, d2)
+            end,
+            function (data)
+                d1 = @p data filter(@o _.j > 0.3) map(@o (x=_.i,))
+                d2 = @p data filter(@o _.j < 0.8) map(@o (x=_.i,))
+                setdiff(d1, d2)
+            end,
+        ]
+            if f isa Tuple
+                dbs, f = f
+                any(db_ -> db isa db_, dbs) || continue
+            end
+            # @info "" f(tbl) f(data)
+            cf = collect(f(tbl))
+            @test issetequal(cf, f(data))
+            @test eltype_compatible(eltype(f(tbl)), eltype(f(data)))
+        end
+
+        @testset for f in [
             isempty,
             length,
             (@f count(Returns(true))),

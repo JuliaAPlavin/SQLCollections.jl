@@ -5,7 +5,7 @@ using StructArrays
 using AccessorsExtra
 using DataPipes
 using FunSQL
-using FunSQL: As, From, Fun, Get, Join, Select, Where, Order, Desc, Limit, Agg, Group
+using FunSQL: As, From, Fun, Get, Join, Select, Where, Order, Desc, Limit, Agg, Group, Append
 using DBInterface
 using Dictionaries
 
@@ -63,6 +63,7 @@ Tables.columns(dbc::SQLCollection) = Tables.columns(DBInterface.execute(dbc.conn
 
 include("func_to_funsql.jl")
 include("readfuncs.jl")
+include("two_collections.jl")
 include("modification.jl")
 include("grouped.jl")
 include("dictionary.jl")
