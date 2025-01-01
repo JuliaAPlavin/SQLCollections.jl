@@ -3,6 +3,7 @@ module DBCollections
 using Tables
 using StructArrays
 using AccessorsExtra
+using DataPipes
 using FunSQL
 using FunSQL: As, From, Fun, Get, Join, Select, Where, Order, Desc, Limit, Agg, Group
 using DBInterface
