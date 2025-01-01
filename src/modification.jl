@@ -1,7 +1,9 @@
 function Base.push!(dbc::SQLCollection, row::NamedTuple)
 	tblname = _tablename(dbc)
 	names = colnames(dbc)
-	@assert issetequal(keys(row), names)  (keys(row), names)
+	if !issetequal(keys(row), names)
+		throw(ArgumentError("cannot push! a row with columns different from than the table: $(keys(row)) vs $(names)"))
+	end
 	DBInterface.execute(dbc.conn, "insert into $tblname values ($(join(fill("?", length(names)), ", ")))", (row[collect(names)]...,))
 	return dbc
 end
