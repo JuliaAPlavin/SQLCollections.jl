@@ -89,7 +89,7 @@ _to_tup(x, y) = (_to_tup(x)..., _to_tup(y)...)
 
 
 _colnames(prefix::Symbol, ::Type{<:NamedTuple{KS}}) where {KS} = Symbol.(prefix, KS)
-_colnames(prefix::Symbol, ::Type) where {KS} = (prefix,)
+_colnames(prefix::Symbol, ::Type) = (prefix,)
 
 _coltypes(T::Type{<:NamedTuple}) = fieldtypes(T)
 _coltypes(T::Type) = (T,)
