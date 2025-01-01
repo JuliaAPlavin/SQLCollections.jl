@@ -2,7 +2,9 @@ module DataManipulationExt
 
 using DataManipulation
 using SQLCollections
-using SQLCollections: colnames
+using SQLCollections: FunSQL, colnames
+
+SQLCollections.func_to_funsql(f::typeof(DataManipulation.rev), arg) = FunSQL.Desc()(arg)
 
 DataManipulation.uniqueonly(dbc::SQLCollection) = unique(dbc) |> only
 DataManipulation.uniqueonly(f, dbc::SQLCollection) = unique(f, dbc) |> only
