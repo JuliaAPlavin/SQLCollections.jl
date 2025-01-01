@@ -7,8 +7,9 @@ using TestItemRunner
     using DataManipulation
     using IntervalSets
     using Statistics
+    using Dates
 
-    data = [(;i, j=i/10) for i in 1:10]
+    data = [(;i, j=i/10, d=Date(2000+i, i, 2i), dt=DateTime(2000+i, i, 2i, i, 3i, 4i)) for i in 1:10]
 
     @testset for db in [
         SQLite.DB(),
@@ -36,9 +37,12 @@ using TestItemRunner
             (@f filter(@o _.j ∉ 0.25..0.75) collect),
             (@f filter(@o _.j ∈ (0.1, 0.5, 0.6)) collect),
             (@f filter(@o _.j ∉ [0.1, 0.5, 0.6]) collect),
+            ([DuckDB.DB], @f filter(@o year(_.d) > 2005) collect),
+            ([DuckDB.DB], @f filter(@o _.d > Date(2005)) collect),
             (@f map(@o (a=_.j + 1,)) collect),
             (@f map(@o (a=_.j * 10, b=_.i + 1)) collect),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) collect),
+            ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt))) collect),
             (@f mapinsert(a=@o Float64(_.i) / 2) collect),
             (@f mapset(i=@o round(2*_.j)) collect),
             (@f filter(@o _.i != 2) map(@o (a=ifelse(_.i > 6, 1, 0),)) filter(@o _.a == 1) collect),
@@ -55,6 +59,11 @@ using TestItemRunner
             (@f filter(@o _.i > 3) minimum(@o _.j)),
             (@f filter(@o _.i > 3) maximum(@o _.j)),
         ]
+            if f isa Tuple
+                dbs, f = f
+                any(db_ -> db isa db_, dbs) || continue
+            end
+            # @info "" f(tbl) f(data)
             @test issetequal(f(tbl), f(data))
             @test f(tbl) == f(data)
         end
