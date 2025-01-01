@@ -7,6 +7,7 @@ func_to_funsql(f::Returns, arg) = f.value
 func_to_funsql(f::PropertyLens{P}, ::Nothing) where {P} = getproperty(Get, P)
 func_to_funsql(f::PropertyLens{P}, arg) where {P} = getproperty(arg, P)  # to support Join as input; clash with nested structs?
 
+func_to_funsql(::typeof(ismissing), arg) = Fun.is_null(arg)
 func_to_funsql(f::Base.Fix2{typeof(in), <:Union{Tuple,AbstractVector}}, arg) = Fun.in(arg, f.x...)
 func_to_funsql(f::Base.Fix2{typeof(∉)}, arg) = func_to_funsql(!∈(f.x), arg)
 
