@@ -62,7 +62,37 @@ function SQLDictionary{I,T}(coll::SQLCollection) where {I,T}
     @invoke SQLDictionary{I,T}(coll::Any, prepared)
 end
 
+function SQLDictionary(coll::SQLCollection)
+    @assert exists(coll)
+    nts = @p let
+        eltype(coll)
+        collect(zip(fieldnames(__), fieldtypes(__)))
+        map() do (k, T)
+            ks = string(k)
+            if startswith(ks, "k_")
+                (kind=:key, name=Symbol(chopprefix(ks, "k_")), type=T)
+            elseif startswith(ks, "v_")
+                (kind=:value, name=Symbol(chopprefix(ks, "v_")), type=T)
+            else
+                error("Expected column name to start with 'k_' or 'v_', got $k")
+            end
+        end
+        Tuple
+    end
+    I = @p nts filter(_.kind == :key) map(_.name => _.type) NamedTuple{first.(__), Tuple{last.(__)...}}
+    T = @p nts filter(_.kind == :value) map(_.name => _.type) NamedTuple{first.(__), Tuple{last.(__)...}}
+    return SQLDictionary{I,T}(coll)
+end
+
+SQLDictionary(conn, tblname::Union{Symbol,AbstractString}) = SQLDictionary(SQLCollection(conn, tblname))
 SQLDictionary{I,T}(conn, tblname::Union{Symbol,AbstractString}) where {I,T} = SQLDictionary{I,T}(SQLCollection(conn, tblname))
+
+Base.keytype(::Type{<:SQLDictionary{I}}) where {I} = I
+Base.valtype(::Type{<:SQLDictionary{<:Any,T}}) where {T} = T
+Base.eltype(::Type{<:SQLDictionary{<:Any,T}}) where {T} = T
+for f in (:keytype, :valtype, :eltype)
+    @eval Base.$f(d::SQLDictionary) = $f(typeof(d))
+end
 
 Base.length(d::SQLDictionary) = length(d.coll)
 Base.isempty(d::SQLDictionary) = isempty(d.coll)

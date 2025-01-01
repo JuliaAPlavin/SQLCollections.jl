@@ -263,6 +263,10 @@ end
         @test collect(dct.coll) |> isempty
         @test collect(dct) |> isempty
 
+        dct_ = SQLDictionary(db, :mytbl2)
+        @test fieldnames(keytype(dct)) == fieldnames(keytype(dct))
+        @test fieldnames(valtype(dct)) == fieldnames(valtype(dct))
+
         insert!(dct, (a=1, b="a"), (x=1.1, y="def"))
         DBInterface.transaction(dct) do
             insert!(dct, (a=1, b="b"), (y="xyz", x=1.2))
