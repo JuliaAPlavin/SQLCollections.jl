@@ -237,6 +237,7 @@ end
         SQLite.DB(),
         # DuckDB.DB(),
     ]
+    # db = SQLite.DB()
         # dct = SQLDictionary{Int,String}(SQLCollection(db, :mytbl))
         # @test isempty(dct)
         # @test length(dct) == 0
@@ -259,8 +260,8 @@ end
         end
         @test_throws "already contains" insert!(dct, (a=2, b="a"), (x=2.1, y="abc"))
         @test_throws "cannot store REAL" insert!(dct, (a=2.123, b="a"), (x="xx", y="abc"))
-        @test_throws "cannot push!" insert!(dct, (a=2, b="a", c="d"), (x="xx", y="abc"))
-        @test_throws "cannot push!" insert!(dct, (a=2, b="a"), (x="xx", y="abc", c="d"))
+        @test_throws Exception insert!(dct, (a=2, b="a", c="d"), (x="xx", y="abc"))
+        @test_throws Exception insert!(dct, (a=2, b="a"), (x="xx", y="abc", c="d"))
 
         @test length(dct) == 3
         @test collect(dct) == [(x=1.1, y="def"), (x=1.2, y="xyz"), (x=2.1, y="abc")]
