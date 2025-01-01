@@ -48,6 +48,7 @@ using TestItemRunner
             (@f map(@o (a=_.j + 1,))),
             (@f map(@o (a=_.j * 10, b=_.i + 1))),
             (@f map(@o (a=_.j * 10, b=_.i + _.j + 1))),
+            (@f map(@o (a=_.j > 5, b=_.i + _.j + 1))),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i)))),
             ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt)))),
             (@f map(@o _[(:j, :i)])),
@@ -56,6 +57,7 @@ using TestItemRunner
             (@f mapset(i=@o round(2*_.j))),
             (@f filter(@o _.i != 2) map(@o (a=ifelse(_.i > 6, 1, 0),)) filter(@o _.a == 1)),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) unique()),
+            # (@f unique(@o _.i > 6)),
             (@f map(@o (a=string(_.i, "%"), b=string("x: ", _.j), c=string("y: ", _.i*10, " kg")))),
             (@f sort(by=(@o _.i))),
             (@f sort(by=(@o _.i), rev=true)),
@@ -92,10 +94,13 @@ using TestItemRunner
             (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first(__, 1) only),
             (@f mean(@o _.i)),
+            (@f filterfirst(@o _.i > 3)),
+            (@f filteronly(@o _.i == 3)),
             (@f filter(@o _.i > 3) sum(@o _.j)),
             (@f filter(@o _.i > 3) extrema(@o _.j)),
             (@f filter(@o _.i > 3) minimum(@o _.j)),
             (@f filter(@o _.i > 3) maximum(@o _.j)),
+            (@f filter(@o _.i > 3) map(@o (;a=_.i > 3)) uniqueonly()),
         ]
             if f isa Tuple
                 dbs, f = f

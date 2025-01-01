@@ -1,3 +1,4 @@
+Iterators.filter(pred, dbc::DBCollection) = filter(pred, dbc)
 Base.filter(pred, dbc::DBCollection) = @modify(dbc.query) do q
 	q |> Where(func_to_funsql(pred))
 end
