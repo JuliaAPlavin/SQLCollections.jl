@@ -13,6 +13,8 @@ function SQLDictionary{I,T}(coll::SQLCollection) where {I,T}
     @invoke SQLDictionary{I,T}(coll::Any)
 end
 
+SQLDictionary{I,T}(conn, tblname::Union{Symbol,AbstractString}) where {I,T} = SQLDictionary{I,T}(SQLCollection(conn, tblname))
+
 Base.length(d::SQLDictionary) = length(d.coll)  
 Base.isempty(d::SQLDictionary) = isempty(d.coll)
 
