@@ -26,13 +26,27 @@ Base.keys(d::SQLDictionary) = map(_keyoptic(d), d.coll)
 Dictionaries.issettable(::SQLDictionary) = true
 Dictionaries.isinsertable(::SQLDictionary) = true
 
-Base.haskey(d::SQLDictionary, i) = any((@o _keyoptic(d)(_) == i), d.coll)
+function Base.haskey(d::SQLDictionary, i)
+    res = DBInterface.execute(d.coll.conn, """
+    SELECT 1
+    FROM $(_tablename(d))
+    WHERE $(@p _colnames(:k_, typeof(i)) map("$_ = ?") join(__, " AND "))
+    LIMIT 2
+    """, _to_tup(i)) |> Tables.rowtable
+    @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(vals))"
+    return !isempty(res)
+end
 
-function Base.getindex(d::SQLDictionary, i)
-    vals = @p filter((@o _keyoptic(d)(_) == i), d.coll) map(_valoptic(d)) first(__, 2) collect
-    @assert length(vals) ≤ 1 "Didn't expect multiple values for key $i, got $(length(vals))"
-    isempty(vals) && throw(KeyError(i))
-    return only(vals)
+function Base.getindex(d::SQLDictionary{<:Any,T}, i) where {T}
+    res = DBInterface.execute(d.coll.conn, """
+    SELECT $(@p _colnames(:v_, T) join(__, ", "))
+    FROM $(_tablename(d))
+    WHERE $(@p _colnames(:k_, typeof(i)) map("$_ = ?") join(__, " AND "))
+    LIMIT 2
+    """, _to_tup(i)) |> Tables.rowtable
+    @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(vals))"
+    isempty(res) && throw(KeyError(i))
+    return _valoptic(d)(only(res))
 end
 
 function Base.setindex!(d::SQLDictionary, v::NamedTuple, i)
