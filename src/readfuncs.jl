@@ -41,6 +41,10 @@ Base.first(dbc::SQLCollection) = first(dbc, 1) |> collect |> first
 
 Base.only(dbc::SQLCollection) = first(dbc, 2) |> collect |> only
 
+Base.isempty(dbc::SQLCollection) = first(dbc, 1) |> collect |> isempty
+
+Base.length(dbc::SQLCollection) = count(Returns(true), dbc)
+
 Base.count(pred, dbc::SQLCollection) = @modify(dbc.query) do q
 	q |> Where(func_to_funsql(pred)) |> Group() |> Select(Agg.count())
 end |> only |> only

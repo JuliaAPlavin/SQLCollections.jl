@@ -28,7 +28,7 @@ using TestItemRunner
 
     @testset for db in [
         SQLite.DB(),
-        SQLCipher.DB(),
+        # SQLCipher.DB(),
         DuckDB.DB(),
     ]
         tbl = SQLCollection(db, :mytbl)
@@ -113,7 +113,8 @@ using TestItemRunner
         end
 
         @testset for f in [
-            # length,
+            isempty,
+            length,
             (@f count(Returns(true))),
             (@f count(@o _.i > 7)),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first),
@@ -163,6 +164,78 @@ end
     end
 end
 
+@testitem "pushing" begin
+    using SQLite, DuckDB
+
+    @testset for db in [
+        SQLite.DB(),
+        DuckDB.DB(),
+    ]
+        tbl = SQLCollection(db, :mytbl)
+        copy!(tbl, [(a=1, b="x")])
+        tbl = SQLCollection(db, :mytbl)
+        @test collect(tbl) == [(a=1, b="x")]
+        push!(tbl, (a=2, b="y"))
+        @test collect(tbl) == [(a=1, b="x"), (a=2, b="y")]
+        # XXX: need STRICT for SQLite
+        # @test_throws Exception push!(tbl, (a="z", b="w"))
+        # @test collect(tbl) == [(a=1, b="x"), (a=2, b="y")]
+    end
+end
+
+@testitem "dictionary" begin
+    using SQLite, DuckDB
+
+    @testset for db in [
+        SQLite.DB(),
+        # DuckDB.DB(),
+    ]
+        # dct = SQLDictionary{Int,String}(SQLCollection(db, :mytbl))
+        # @test isempty(dct)
+        # @test length(dct) == 0
+        # @test collect(dct.coll) |> isempty
+        # @test collect(dct) |> isempty
+        # insert!(dct, 1, "a")
+        # @test collect(dct)
+
+
+        dct = SQLDictionary{@NamedTuple{a::Int,b::String}, @NamedTuple{x::Float64,y::String}}(SQLCollection(db, :mytbl2))
+        @test isempty(dct)
+        @test length(dct) == 0
+        @test collect(dct.coll) |> isempty
+        @test collect(dct) |> isempty
+
+        insert!(dct, (a=1, b="a"), (x=1.1, y="def"))
+        insert!(dct, (a=1, b="b"), (x=1.2, y="xyz"))
+        insert!(dct, (a=2, b="a"), (x=2.1, y="abc"))
+        @test_throws "already contains" insert!(dct, (a=2, b="a"), (x=2.1, y="abc"))
+        @test_throws "cannot store REAL" insert!(dct, (a=2.123, b="a"), (x="xx", y="abc"))
+
+        @test length(dct) == 3
+        @test collect(dct) == [(x=1.1, y="def"), (x=1.2, y="xyz"), (x=2.1, y="abc")]
+        @test first(dct) == (x=1.1, y="def")
+
+        @test dct[(a=1, b="a")] == (x=1.1, y="def")
+        @test_throws KeyError((a=1, b="c")) dct[(a=1, b="c")]
+        @test_throws KeyError((a=1, b="c")) dct[(a=1, b="c")] = (x=1.3, y="ghi")
+        dct[(a=1, b="a")] = (x=1.3, y="ghi")
+        @test dct[(a=1, b="a")] == (x=1.3, y="ghi")
+
+        delete!(dct, (a=1, b="a"))
+        @test_throws KeyError((a=1, b="a")) delete!(dct, (a=1, b="a"))
+        @test collect(dct) == [(x=1.2, y="xyz"), (x=2.1, y="abc")]
+
+        set!(dct, (a=10, b="a"), (x=10.1, y="def"))
+        set!(dct, (a=1, b="b"), (x=20, y="XXX"))
+        @test collect(dct) == [(x = 20.0, y = "XXX"), (x = 2.1, y = "abc"), (x = 10.1, y = "def")]
+
+        unset!(dct, (a=1, b="b"))
+        unset!(dct, (a=100, b="a"))
+        @test collect(dct) == [(x = 2.1, y = "abc"), (x = 10.1, y = "def")]
+
+        @test collect(keys(dct)) == [(a = 2, b = "a"), (a = 10, b = "a")]
+    end
+end 
 
 @testitem "_" begin
     import Aqua

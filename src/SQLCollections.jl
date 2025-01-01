@@ -7,8 +7,9 @@ using DataPipes
 using FunSQL
 using FunSQL: As, From, Fun, Get, Join, Select, Where, Order, Desc, Limit, Agg, Group
 using DBInterface
+using Dictionaries
 
-export SQLCollection, exists
+export SQLCollection, SQLDictionary, exists, set!, unset!
 
 struct SQLCollection
     conn::FunSQL.SQLConnection
@@ -64,6 +65,7 @@ include("func_to_funsql.jl")
 include("readfuncs.jl")
 include("modification.jl")
 include("grouped.jl")
+include("dictionary.jl")
 
 include("../ext/PrintfExt.jl")
 
