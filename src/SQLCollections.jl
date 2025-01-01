@@ -30,7 +30,12 @@ SQLCollection(conn, tbl::Union{Symbol,AbstractString}) = SQLCollection(conn, Fro
 colnames(dbc::SQLCollection) = colnames(dbc.query; dbc.conn.catalog)
 colnames(q; catalog=nothing) = keys(q.label_map)
 colnames(q::FunSQL.SQLNode; kwargs...) = colnames(q[]; kwargs...)
-colnames(q::FunSQL.FromNode; catalog) = catalog[q.source::Symbol].columns |> keys
+colnames(q::FunSQL.FromNode; catalog) =
+	if q.source isa Symbol
+		catalog[q.source::Symbol].columns |> keys
+	elseif q.source isa FunSQL.FunctionSource
+		q.source.columns
+	end
 
 exists(dbc::SQLCollection) = 
     try
