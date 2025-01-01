@@ -28,7 +28,7 @@ using TestItemRunner
 
     @testset for db in [
         SQLite.DB(),
-        # SQLCipher.DB(),
+        SQLCipher.DB(),
         DuckDB.DB(),
     ]
         tbl = SQLCollection(db, :mytbl)
