@@ -1,5 +1,5 @@
 function Base.vcat(dbcs::SQLCollection...)
-    @assert all(dbc -> dbc.conn === first(dbcs).conn, dbcs)
+    @assert all(dbc -> dbc.conn.raw == first(dbcs).conn.raw, dbcs)
     @assert all(dbc -> colnames(dbc) == colnames(first(dbcs)), dbcs)
     dbc_a = first(dbcs)
     qs_rest = map(dbc -> dbc.query, Base.tail(dbcs))
@@ -11,7 +11,7 @@ end
 # can use SQL UNION / INTERSECT / EXCEPT?
 
 function Base.intersect(dbc_a::SQLCollection, dbc_b::SQLCollection)
-    @assert dbc_a.conn === dbc_b.conn
+    @assert dbc_a.conn.raw == dbc_b.conn.raw
     cols = collect(colnames(dbc_a))
     @assert issetequal(cols, colnames(dbc_b))
     jcond = Fun.and(map(col -> Fun.:(==)(Get[col], Get.b[col]), cols)...)
@@ -22,7 +22,7 @@ function Base.intersect(dbc_a::SQLCollection, dbc_b::SQLCollection)
 end
 
 function Base.union(dbc_a::SQLCollection, dbc_b::SQLCollection)
-    @assert dbc_a.conn === dbc_b.conn
+    @assert dbc_a.conn.raw == dbc_b.conn.raw
     cols = collect(colnames(dbc_a))
     @assert issetequal(cols, colnames(dbc_b))
     jcond = Fun.or(map(col -> Fun.:(==)(Get[col], Get.b[col]), cols)...)
@@ -34,7 +34,7 @@ function Base.union(dbc_a::SQLCollection, dbc_b::SQLCollection)
 end
 
 function Base.setdiff(dbc_a::SQLCollection, dbc_b::SQLCollection)
-    @assert dbc_a.conn === dbc_b.conn
+    @assert dbc_a.conn.raw == dbc_b.conn.raw
     cols = collect(colnames(dbc_a))
     @assert issetequal(cols, colnames(dbc_b))
     jcond = Fun.and(map(col -> Fun.:(==)(Get[col], Get.b[col]), cols)...)
