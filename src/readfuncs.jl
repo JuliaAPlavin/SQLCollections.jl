@@ -43,6 +43,9 @@ Base.only(dbc::SQLCollection) = first(dbc, 2) |> collect |> only
 
 Base.isempty(dbc::SQLCollection) = first(dbc, 1) |> collect |> isempty
 
+Base.any(pred, dbc::SQLCollection) = !(@p dbc filter(pred) isempty)
+Base.all(pred, dbc::SQLCollection) = @p dbc filter(!pred) isempty
+
 Base.length(dbc::SQLCollection) = count(Returns(true), dbc)
 
 Base.count(pred, dbc::SQLCollection) = @modify(dbc.query) do q

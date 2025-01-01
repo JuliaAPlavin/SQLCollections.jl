@@ -24,6 +24,8 @@ Base.keys(d::SQLDictionary) = map(_keyoptic(d), d.coll)
 Dictionaries.issettable(::SQLDictionary) = true
 Dictionaries.isinsertable(::SQLDictionary) = true
 
+Base.haskey(d::SQLDictionary, i) = any((@o _keyoptic(d)(_) == i), d.coll)
+
 function Base.getindex(d::SQLDictionary, i)
     vals = @p filter((@o _keyoptic(d)(_) == i), d.coll) map(_valoptic(d)) first(__, 2) collect
     @assert length(vals) ≤ 1 "Didn't expect multiple values for key $i, got $(length(vals))"
