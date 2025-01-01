@@ -48,6 +48,8 @@ exists(dbc::SQLCollection) =
 
 Base.collect(dbc::SQLCollection) = StructArray(dbc)
 
+Base.eltype(dbc::SQLCollection) = @p dbc first(__, 0) collect eltype
+
 (::Type{StructArray})(dbc::SQLCollection) = DBInterface.execute(dbc.conn, dbc.query) |> columntable |> StructArray
 (::Type{StructVector})(dbc::SQLCollection) = StructArray(dbc)
 (::Type{Array})(dbc::SQLCollection) = DBInterface.execute(dbc.conn, dbc.query) |> rowtable
