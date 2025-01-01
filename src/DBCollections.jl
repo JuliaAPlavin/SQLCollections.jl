@@ -38,6 +38,12 @@ exists(dbc::DBCollection) =
 
 Base.collect(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> columntable |> StructArray
 
+(::Type{StructArray})(dbc::DBCollection) = collect(dbc)
+(::Type{StructVector})(dbc::DBCollection) = collect(dbc)
+(::Type{Array})(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> rowtable
+(::Type{Vector})(dbc::DBCollection) = DBInterface.execute(dbc.conn, dbc.query) |> rowtable
+
+
 include("func_to_funsql.jl")
 include("readfuncs.jl")
 include("modification.jl")
