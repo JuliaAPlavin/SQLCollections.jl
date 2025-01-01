@@ -27,6 +27,34 @@ func_to_funsql(::Type{Float64}, arg) = Fun.cast(arg, "REAL")
 func_to_funsql(f::Base.Fix2{typeof(string)}, arg) = Fun.concat(arg, f.x)
 func_to_funsql(f::Base.Fix1{typeof(string)}, arg) = Fun.concat(f.x, arg)
 func_to_funsql(f::AccessorsExtra.FixArgs{typeof(string)}, arg) = Fun.concat(map(a -> a isa AccessorsExtra.Placeholder ? arg : a, f.args)...)
+func_to_funsql(f::Base.Fix2{typeof(*),<:AbstractString}, arg) = Fun.concat(arg, f.x)
+func_to_funsql(f::Base.Fix1{typeof(*),<:AbstractString}, arg) = Fun.concat(f.x, arg)
+func_to_funsql(f::AccessorsExtra.FixArgs{typeof(*)}, arg) = Fun.concat(map(a -> a isa AccessorsExtra.Placeholder ? arg : a, f.args)...)
+
+
+# string search: like, regex
+func_to_funsql(f::Base.Fix2{typeof(startswith),<:AbstractString}, arg) = Fun.like(arg, "$(_escape_for_like(f.x))%")
+func_to_funsql(f::Base.Fix2{typeof(endswith),<:AbstractString}, arg) = Fun.like(arg, "%$(_escape_for_like(f.x))")
+func_to_funsql(f::Base.Fix2{typeof(contains),<:AbstractString}, arg) = Fun.like(arg, "%$(_escape_for_like(f.x))%")
+_escape_for_like(s::AbstractString) = replace(s, '%' => "\\%", '_' => "\\_")
+
+# func_to_funsql(f::Base.Fix2{typeof(contains),<:Regex}, arg) = Fun.regexp_like(arg, string(f.x))
+func_to_funsql(f::Base.Fix1{typeof(occursin)}, arg) = func_to_funsql(contains(f.x), arg)
+
+func_to_funsql(f::Base.Fix2{typeof(replace),<:Pair{<:AbstractString,<:AbstractString}}, arg) = Fun.regexp_replace(arg, replace(f.x[1], r"([()[\]{}?*+\-|^\$\\.&~#\s=!<>|:])" => s"\\\1"), f.x[2])
+func_to_funsql(f::Base.Fix2{typeof(replace),<:Pair{<:Regex,<:AbstractString}}, arg) = Fun.regexp_replace(arg, f.x[1].pattern, f.x[2])
+
+
+func_to_funsql(f::typeof(lowercase), arg) = Fun.lower(arg)
+func_to_funsql(f::typeof(uppercase), arg) = Fun.upper(arg)
+func_to_funsql(f::typeof(strip), arg) = Fun.trim(arg)
+func_to_funsql(f::typeof(lstrip), arg) = Fun.ltrim(arg)
+func_to_funsql(f::typeof(rstrip), arg) = Fun.rtrim(arg)
+func_to_funsql(f::Base.Fix2{typeof(strip)}, arg) = Fun.trim(arg, _strip_chars_to_sql(f.x))
+func_to_funsql(f::Base.Fix2{typeof(lstrip)}, arg) = Fun.ltrim(arg, _strip_chars_to_sql(f.x))
+func_to_funsql(f::Base.Fix2{typeof(rstrip)}, arg) = Fun.rtrim(arg, _strip_chars_to_sql(f.x))
+_strip_chars_to_sql(s::AbstractChar) = string(s)
+_strip_chars_to_sql(s::AbstractVector{<:AbstractChar}) = String(s)
 
 
 func_to_funsql(f::AccessorsExtra.PropertyFunction, arg) = @p let
