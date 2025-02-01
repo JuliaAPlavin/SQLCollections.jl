@@ -24,7 +24,10 @@ func_to_funsql(f::Base.Fix2{typeof(∉)}, arg) = func_to_funsql(!∈(f.x), arg)
 
 func_to_funsql(f::Base.Fix2, arg) = getproperty(Fun, nameof(f.f))(arg, f.x)
 func_to_funsql(f::Base.Fix1, arg) = getproperty(Fun, nameof(f.f))(f.x, arg)
-func_to_funsql(f::Function, arg) = getproperty(Fun, nameof(f))(arg)
+function func_to_funsql(f::Function, arg, args...)
+	Base.issingletontype(typeof(f)) || error("Function $f is not a singleton type")
+	getproperty(Fun, nameof(f))(arg, args...)
+end
 
 funcs_to_funsql(f::AccessorsExtra.ContainerOptic) = map(func_to_funsql, f.optics)
 
@@ -75,8 +78,10 @@ _strip_chars_to_sql(s::AbstractVector{<:AbstractChar}) = String(s)
 
 func_to_funsql(f::AccessorsExtra.PropertyFunction, arg) = @p let
 	f.expr
-	@modify(__ |> RecursiveOfType(Expr; order=:pre) |> If(e -> Base.isexpr(e, :call)) |> _.args[1]) do func
-		:($Fun.$func)
+	@modify(__ |> RecursiveOfType(Expr; order=:pre) |> If(e -> Base.isexpr(e, :call))) do call
+		func = call.args[1]
+		args = call.args[2:end]
+		:(func_to_funsql($func, $(args...)))
 	end
 	@set __ |> RecursiveOfType(Symbol) |> If(==(:_)) = something(arg, Get)
 	eval()
