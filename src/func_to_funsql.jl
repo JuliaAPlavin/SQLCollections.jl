@@ -35,6 +35,9 @@ func_to_funsql(f::AccessorsExtra.FixArgsT(ifelse, (AccessorsExtra.Placeholder, A
 
 func_to_funsql(::Type{Float64}, arg) = Fun.cast(arg, "REAL")
 
+func_to_funsql(::typeof(deg2rad), arg) = Fun.radians(arg)
+func_to_funsql(::typeof(rad2deg), arg) = Fun.degrees(arg)
+
 func_to_funsql(f::Base.Fix2{typeof(string)}, arg) = Fun.concat(arg, f.x)
 func_to_funsql(f::Base.Fix1{typeof(string)}, arg) = Fun.concat(f.x, arg)
 func_to_funsql(f::AccessorsExtra.FixArgs{typeof(string)}, arg) = Fun.concat(map(a -> a isa AccessorsExtra.Placeholder ? arg : a, f.args)...)
