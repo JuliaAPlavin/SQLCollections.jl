@@ -9,7 +9,7 @@ using FunSQL: As, From, Fun, Get, Join, Select, Where, Order, Desc, Limit, Agg, 
 using DBInterface
 using Dictionaries
 
-export SQLCollection, SQLDictionary, exists, set!, unset!
+export SQLCollection, SQLDictionary, exists, set!, unset!, @o
 
 struct SQLCollection
     conn::FunSQL.SQLConnection
