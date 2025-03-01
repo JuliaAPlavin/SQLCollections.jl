@@ -20,3 +20,9 @@ function Base.empty!(dbc::SQLCollection)
 	DBInterface.execute(dbc.conn, "delete from $tblname")
 	return dbc
 end
+
+function drop!(dbc::SQLCollection)
+	tblname = _tablename(dbc)
+	DBInterface.execute(dbc.conn, "drop table $tblname")
+	return dbc
+end
