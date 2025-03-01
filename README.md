@@ -54,22 +54,32 @@ Coming Soon:
 
 SQLCollections.jl acts as a very thin layer, translating Julia functions into SQL code (see code sizes in the comparison below).  This approach promotes maintainability and exemplifies Julia's composability.
 
+Here's the improved version with better English, readability, and added links:
+
+### Synergies with other packages
+
+- **[DataPipes.jl](https://github.com/JuliaAPlavin/DataPipes.jl) <|>**: while not strictly required, it provides convenient piping functionality when there are multiple data processing steps. This works seamlessly with both regular Julia collections and SQLCollections.
+
+- **[FunSQL.jl](https://github.com/MechanicalRabbit/FunSQL.jl)**: beyond working with database tables as-is, SQLCollections.jl can also accept arbitrary FunSQL queries as input.
+
+- **[QuackIO.jl](https://github.com/JuliaAPlavin/QuackIO.jl) 🐣🦆**: integrates smoothly with SQLCollections.jl, for efficient out-of-memory filtering and processing of CSV, Parquet, and other tables using DuckDB as the underlying engine.
+
 ### Alternatives
 
-SQLCollections.jl is the only package that enables direct reuse of standard Julia data manipulation functions with databases.  However, several other packages aim to simplify SQL database access from Julia.  This section provides a brief comparison, focusing on key differences and code size (lines of code excluding tests).  Some Python packages are included for context:
+SQLCollections.jl is the only package that enables direct reuse of standard Julia data manipulation functions with databases. However, several other packages aim to simplify SQL database access from Julia. This section provides a brief comparison, focusing on key differences and code size (lines of code excluding tests). Some Python packages are included for context:
 
-- **SQLCollections.jl:** < 400 LOC
-- **SQLStore.jl:** Ad-hoc syntax, very limited function/table support; predecessor of SQLCollections.jl; ~500 LOC
-- **dplython:** ~700 LOC
-- **QuerySQLite.jl:** Experimental Query.jl syntax support for SQLite; conceptually closest to SQLCollections.jl; ~800 LOC
-- **Relationals.jl:** ORM; ~1200 LOC
-- **Octo.jl:**  Clever use of Julia comprehensions; ~1800 LOC
-- **SQLCompose.jl:**  Close to regular Julia syntax, but not 100%; ~2000 LOC
-- **datar:** ~2300 LOC
-- **PostgresORM.jl:** ORM; ~2500 LOC
-- **TidierDB.jl:**  For users coming from R; ~5000 LOC
-- **Blaze:** ~10000 LOC
-- **Ibis:** ~43000 LOC
+- 🟢🟣🔴 **SQLCollections.jl:** < 400 LOC
+- 🟢🟣🔴 **SQLStore.jl:** Ad-hoc syntax, very limited function/table support; predecessor of SQLCollections.jl; ~500 LOC
+- 🔵🟡 **dplython:** ~700 LOC
+- 🟢🟣🔴 **QuerySQLite.jl:** Experimental Query.jl syntax support for SQLite; conceptually closest to SQLCollections.jl; ~800 LOC
+- 🟢🟣🔴 **Relationals.jl:** ORM; ~1200 LOC
+- 🟢🟣🔴 **Octo.jl:** Clever use of Julia comprehensions; ~1800 LOC
+- 🟢🟣🔴 **SQLCompose.jl:** Close to regular Julia syntax, but not 100%; ~2000 LOC
+- 🔵🟡 **datar:** ~2300 LOC
+- 🟢🟣🔴 **PostgresORM.jl:** ORM; ~2500 LOC
+- 🟢🟣🔴 **TidierDB.jl:** For users coming from R; ~5000 LOC
+- 🔵🟡 **Blaze:** ~10000 LOC
+- 🔵🟡 **Ibis:** ~43000 LOC
 
 ### Limitations
 
