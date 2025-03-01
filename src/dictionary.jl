@@ -1,3 +1,5 @@
+# XXX: should be split into a separate package, only housed here temporarily
+
 struct SQLDictionary{I,T}
     coll
     prepared::NamedTuple
