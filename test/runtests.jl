@@ -330,6 +330,21 @@ end
 
         @test collect(keys(dct)) == [(a = 2, b = "a"), (a = 2, b = "b"), (a = 10, b = "a")]
 
+        # Test get() function with default value
+        @test get(dct, (a=2, b="a"), (x=0.0, y="")) == (x=2.1, y="abc")
+        @test get(dct, (a=99, b="missing"), (x=42.0, y="default")) == (x=42.0, y="default")
+        @test get(dct, (b="a", a=2), (x=0.0, y="")) == (x=2.1, y="abc")  # Test key order independence
+        # Test get() function with callable default
+        @test get(() -> (x=100.0, y="fallback"), dct, (a=2, b="a")) == (x=2.1, y="abc")
+        @test get(() -> (x=100.0, y="fallback"), dct, (a=99, b="missing")) == (x=100.0, y="fallback")
+        # Test that callable is only called when key is missing
+        call_count = Ref(0)
+        default_func = () -> (call_count[] += 1; (x=999.0, y="called"))
+        @test get(default_func, dct, (a=2, b="a")) == (x=2.1, y="abc")
+        @test call_count[] == 0  # Should not be called for existing key
+        @test get(default_func, dct, (a=99, b="missing")) == (x=999.0, y="called")
+        @test call_count[] == 1  # Should be called for missing key
+
         dct = SQLDictionary{@NamedTuple{a::Int,b::Vector}, @NamedTuple{x::Float64}}(db, :mytbl3)
         insert!(dct, (a=1, b=["a"]), (;x=1.1))
         insert!(dct, (a=1, b=UInt8[1, 2, 3]), (;x=1.2))
