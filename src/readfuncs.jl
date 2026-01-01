@@ -58,4 +58,3 @@ end
 Base.extrema(func, dbc::SQLCollection) = @modify(dbc.query) do q
 	q |> Group() |> Select(Agg.min(func_to_funsql(func)), Agg.max(func_to_funsql(func)))
 end |> only |> NTuple{2}
-
