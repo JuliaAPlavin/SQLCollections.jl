@@ -56,16 +56,16 @@ SQLCollections is a very thin layer converting Julia functions to SQL code – s
 
 SQLCollections.jl is the only package enabling the reuse of regular Julia data manipulation functions for databases. \
 Still, there are many other packages with roughly similar goals of providing convenient access to SQL databases from Julia. Here, we briefly compare them in terms of main differences and the code size (LOC excluding tests); some Python packages are also included for context.
-  - **SQLCollections.jl**: < 300 LOC *(although still growing)*
-  - SQLStore.jl: syntax similar to regular Julia, but not 100% and only supports tables created by itself; ~500 LOC
+  - **SQLCollections.jl**: < 400 LOC *(although still growing)*
+  - SQLStore.jl: adhoc syntax, very limited functions/tables support; predecessor of SQLCollections.jl; ~500 LOC
   - dplython: ~700 LOC
-  - QuerySQLite.jl: conceptually closest to SQLCollections.jl, experimental Query.jl syntax support for SQLite; ~800 LOC
+  - QuerySQLite.jl: experimental Query.jl syntax support for SQLite, conceptually closest to SQLCollections.jl; ~800 LOC
   - Relationals.jl: ORM, ~1200 LOC
   - Octo.jl: neat use of Julia comprehensions; ~1800 LOC
   - SQLCompose.jl: closest to regular Julia syntax, still not 100%; ~2000 LOC
   - datar: ~2300 LOC
   - PostgresORM.jl: ORM, ~2500 LOC
-  - TidierDB.jl: for those coming from R; ~4000 LOC
+  - TidierDB.jl: for those coming from R; ~5000 LOC
   - Blaze: ~10000 LOC
   - Ibis: ~43000 LOC
 
