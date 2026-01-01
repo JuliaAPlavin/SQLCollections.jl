@@ -149,6 +149,12 @@ using TestItemRunner
             length,
             (@f count(Returns(true))),
             (@f count(@o _.i > 7)),
+            (@f any(Returns(true))),
+            (@f any(@o _.i > 7)),
+            (@f any(@o _.i > 100)),
+            (@f all(Returns(true))),
+            (@f all(@o _.i > 7)),
+            (@f all(@o _.i > 100)),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) first(__, 1) only),
             (@f mean(@o _.i)),
@@ -261,10 +267,18 @@ end
         @test first(dct) == (x=1.1, y="def")
 
         @test dct[(a=1, b="a")] == (x=1.1, y="def")
+        @test dct[(b="a", a=1)] == (x=1.1, y="def")
         @test_throws KeyError((a=1, b="c")) dct[(a=1, b="c")]
         @test_throws KeyError((a=1, b="c")) dct[(a=1, b="c")] = (x=1.3, y="ghi")
+        @test_throws AssertionError dct[123]
+        @test_throws AssertionError dct[(a=1, b="c", c="d")]
         dct[(a=1, b="a")] = (x=1.3, y="ghi")
         @test dct[(a=1, b="a")] == (x=1.3, y="ghi")
+
+        @test haskey(dct, (a=1, b="a"))
+        @test !haskey(dct, (a=1, b="c"))
+        @test_throws AssertionError haskey(dct, (a=1, b="c", c="d"))
+        @test_throws AssertionError haskey(dct, 123)
 
         delete!(dct, (a=1, b="a"))
         @test_throws KeyError((a=1, b="a")) delete!(dct, (a=1, b="a"))
