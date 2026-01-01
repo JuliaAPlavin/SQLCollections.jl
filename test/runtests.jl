@@ -216,11 +216,13 @@ end
 
         insert!(dct, (a=1, b="a"), (x=1.1, y="def"))
         DBInterface.transaction(dct) do
-            insert!(dct, (a=1, b="b"), (x=1.2, y="xyz"))
-            insert!(dct, (a=2, b="a"), (x=2.1, y="abc"))
+            insert!(dct, (a=1, b="b"), (y="xyz", x=1.2))
+            insert!(dct, (b="a", a=2), (x=2.1, y="abc"))
         end
         @test_throws "already contains" insert!(dct, (a=2, b="a"), (x=2.1, y="abc"))
         @test_throws "cannot store REAL" insert!(dct, (a=2.123, b="a"), (x="xx", y="abc"))
+        @test_throws "cannot push!" insert!(dct, (a=2, b="a", c="d"), (x="xx", y="abc"))
+        @test_throws "cannot push!" insert!(dct, (a=2, b="a"), (x="xx", y="abc", c="d"))
 
         @test length(dct) == 3
         @test collect(dct) == [(x=1.1, y="def"), (x=1.2, y="xyz"), (x=2.1, y="abc")]
