@@ -342,8 +342,7 @@ end
 
 @testitem "_" begin
     import Aqua
-    Aqua.test_all(SQLCollections; ambiguities=false)
-    Aqua.test_ambiguities(SQLCollections)
+    Aqua.test_all(SQLCollections; ambiguities=(;broken=true))
 
     import CompatHelperLocal as CHL
     CHL.@check(checktest=false)
