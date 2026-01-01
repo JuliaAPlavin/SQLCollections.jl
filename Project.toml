@@ -1,7 +1,7 @@
 name = "SQLCollections"
 uuid = "3934435e-e6e6-4fea-a5c0-3a716143d619"
 authors = ["Alexander Plavin <alexander@plav.in>"]
-version = "0.1.10"
+version = "0.1.11"
 
 [deps]
 AccessorsExtra = "33016aad-b69d-45be-9359-82a41f556fd4"
@@ -48,6 +48,6 @@ IntervalSets = "0.7"
 Printf = "1"
 SQLite = "1.6.1"
 Statistics = "1"
-StructArrays = "0.6.18"
+StructArrays = "0.6.18, 0.7.1"
 Tables = "1.12.0"
 julia = "1.10"
