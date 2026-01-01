@@ -120,6 +120,14 @@ function Base.getindex(d::SQLDictionary{I}, i) where {I}
     return _valoptic(d)(only(res))
 end
 
+Base.get(d::SQLDictionary, i, default) = get(Returns(default), d, i)
+
+function Base.get(f::Base.Callable, d::SQLDictionary{I}, i) where {I}
+    res = DBInterface.execute(d.prepared.getindex, _to_tup(I, i)) |> Tables.rowtable
+    @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res))"
+    return isempty(res) ? f() : _valoptic(d)(only(res))
+end
+
 function Base.setindex!(d::SQLDictionary{I,T}, v::NamedTuple, i) where {I,T}
     res = DBInterface.execute(d.prepared.setindex, _to_tup(T, v, I, i)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res)); updated all of them"
