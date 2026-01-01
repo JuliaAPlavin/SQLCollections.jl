@@ -67,6 +67,9 @@ include("modification.jl")
 include("grouped.jl")
 include("dictionary.jl")
 
+DBInterface.transaction(f, dbc::SQLCollection) = DBInterface.transaction(f, dbc.conn)
+DBInterface.transaction(f, dbc::SQLDictionary) = DBInterface.transaction(f, dbc.coll)
+
 include("../ext/PrintfExt.jl")
 
 end

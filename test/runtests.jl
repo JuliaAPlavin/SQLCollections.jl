@@ -175,8 +175,17 @@ end
         copy!(tbl, [(a=1, b="x")])
         tbl = SQLCollection(db, :mytbl)
         @test collect(tbl) == [(a=1, b="x")]
-        push!(tbl, (a=2, b="y"))
-        @test collect(tbl) == [(a=1, b="x"), (a=2, b="y")]
+        DBInterface.transaction(tbl) do
+            push!(tbl, (a=2, b="y"))
+            push!(tbl, (a=3, b="z"))
+        end
+        @test collect(tbl) == [(a=1, b="x"), (a=2, b="y"), (a=3, b="z")]
+        @test_throws ErrorException DBInterface.transaction(tbl) do
+            push!(tbl, (a=4, b="w"))
+            error()
+            push!(tbl, (a=5, b="v"))
+        end
+        @test collect(tbl) == [(a=1, b="x"), (a=2, b="y"), (a=3, b="z")]
         # XXX: need STRICT for SQLite
         # @test_throws Exception push!(tbl, (a="z", b="w"))
         # @test collect(tbl) == [(a=1, b="x"), (a=2, b="y")]
@@ -206,8 +215,10 @@ end
         @test collect(dct) |> isempty
 
         insert!(dct, (a=1, b="a"), (x=1.1, y="def"))
-        insert!(dct, (a=1, b="b"), (x=1.2, y="xyz"))
-        insert!(dct, (a=2, b="a"), (x=2.1, y="abc"))
+        DBInterface.transaction(dct) do
+            insert!(dct, (a=1, b="b"), (x=1.2, y="xyz"))
+            insert!(dct, (a=2, b="a"), (x=2.1, y="abc"))
+        end
         @test_throws "already contains" insert!(dct, (a=2, b="a"), (x=2.1, y="abc"))
         @test_throws "cannot store REAL" insert!(dct, (a=2.123, b="a"), (x="xx", y="abc"))
 
