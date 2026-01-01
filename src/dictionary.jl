@@ -1,5 +1,6 @@
 struct SQLDictionary{I,T}
     coll
+    prepared::NamedTuple
 end
 
 function SQLDictionary{I,T}(coll::SQLCollection) where {I,T}
@@ -10,12 +11,60 @@ function SQLDictionary{I,T}(coll::SQLCollection) where {I,T}
             NamedTuple{_colnames(:k_, I), Tuple{_coltypes(I)...}},
             NamedTuple{_colnames(:v_, T), Tuple{_coltypes(T)...}})
     end
-    @invoke SQLDictionary{I,T}(coll::Any)
+    colnames = (_colnames(:k_, I)..., _colnames(:v_, T)...)
+    prepared = (
+        haskey=DBInterface.prepare(coll.conn, """
+            SELECT 1
+            FROM $(_tablename(coll))
+            WHERE $(@p _colnames(:k_, I) map("$_ = ?") join(__, " AND "))
+            LIMIT 2
+            """),
+        getindex=DBInterface.prepare(coll.conn, """
+            SELECT $(@p _colnames(:v_, T) join(__, ", "))
+            FROM $(_tablename(coll))
+            WHERE $(@p _colnames(:k_, I) map("$_ = ?") join(__, " AND "))
+            LIMIT 2
+            """),
+        insert=DBInterface.prepare(coll.conn, """
+            INSERT INTO
+            $(_tablename(coll)) ($(join(colnames, ", ")))
+            VALUES ($(join(fill("?", length(colnames)), ", ")))
+            """),
+        delete=DBInterface.prepare(coll.conn, """
+            DELETE FROM $(_tablename(coll))
+            WHERE $(@p _colnames(:k_, I) map("$_ = ?") join(__, " AND "))
+            RETURNING 1
+            """),
+        setindex=DBInterface.prepare(coll.conn, """
+            UPDATE $(_tablename(coll))
+            SET $(@p _colnames(:v_, T) map("$_ = ?") join(__, ", "))
+            WHERE $(@p _colnames(:k_, I) map("$_ = ?") join(__, " AND "))
+            RETURNING 1
+            """),
+        getexcl=DBInterface.prepare(coll.conn, """
+            INSERT INTO
+            $(_tablename(coll)) ($(join(colnames, ", ")))
+            VALUES ($(join(fill("?", length(colnames)), ", ")))
+            ON CONFLICT ($(join(_colnames(:k_, I), ", ")))
+            DO UPDATE SET rowid = rowid
+            RETURNING $(join(_colnames(:v_, T), ", "))
+            """),
+        set=DBInterface.prepare(coll.conn, """
+            INSERT INTO
+            $(_tablename(coll)) ($(join(colnames, ", ")))
+            VALUES ($(join(fill("?", length(colnames)), ", ")))
+            ON CONFLICT ($(join(_colnames(:k_, I), ", ")))
+            DO UPDATE SET
+            $(@p _colnames(:v_, T) map("$_ = excluded.$_") join(__, ", "))
+            RETURNING 1
+            """)
+    )
+    @invoke SQLDictionary{I,T}(coll::Any, prepared)
 end
 
 SQLDictionary{I,T}(conn, tblname::Union{Symbol,AbstractString}) where {I,T} = SQLDictionary{I,T}(SQLCollection(conn, tblname))
 
-Base.length(d::SQLDictionary) = length(d.coll)  
+Base.length(d::SQLDictionary) = length(d.coll)
 Base.isempty(d::SQLDictionary) = isempty(d.coll)
 
 Base.collect(d::SQLDictionary) = collect(map(_valoptic(d), d.coll))
@@ -26,36 +75,21 @@ Base.keys(d::SQLDictionary) = map(_keyoptic(d), d.coll)
 Dictionaries.issettable(::SQLDictionary) = true
 Dictionaries.isinsertable(::SQLDictionary) = true
 
-function Base.haskey(d::SQLDictionary, i)
-    res = DBInterface.execute(d.coll.conn, """
-    SELECT 1
-    FROM $(_tablename(d))
-    WHERE $(@p _colnames(:k_, typeof(i)) map("$_ = ?") join(__, " AND "))
-    LIMIT 2
-    """, _to_tup(i)) |> Tables.rowtable
+function Base.haskey(d::SQLDictionary{I}, i) where {I}
+    res = DBInterface.execute(d.prepared.haskey, _to_tup(I, i)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(vals))"
     return !isempty(res)
 end
 
-function Base.getindex(d::SQLDictionary{<:Any,T}, i) where {T}
-    res = DBInterface.execute(d.coll.conn, """
-    SELECT $(@p _colnames(:v_, T) join(__, ", "))
-    FROM $(_tablename(d))
-    WHERE $(@p _colnames(:k_, typeof(i)) map("$_ = ?") join(__, " AND "))
-    LIMIT 2
-    """, _to_tup(i)) |> Tables.rowtable
+function Base.getindex(d::SQLDictionary{I}, i) where {I}
+    res = DBInterface.execute(d.prepared.getindex, _to_tup(I, i)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(vals))"
     isempty(res) && throw(KeyError(i))
     return _valoptic(d)(only(res))
 end
 
-function Base.setindex!(d::SQLDictionary, v::NamedTuple, i)
-    res = DBInterface.execute(d.coll.conn, """
-    UPDATE $(_tablename(d))
-    SET $(@p _colnames(:v_, typeof(v)) map("$_ = ?") join(__, ", "))
-    WHERE $(@p _colnames(:k_, typeof(i)) map("$_ = ?") join(__, " AND "))
-    RETURNING 1
-    """, _to_tup(v, i)) |> Tables.rowtable
+function Base.setindex!(d::SQLDictionary{I,T}, v::NamedTuple, i) where {I,T}
+    res = DBInterface.execute(d.prepared.setindex, _to_tup(T, v, I, i)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res)); updated all of them"
     isempty(res) && throw(KeyError(i))
     return d
@@ -63,49 +97,28 @@ end
 
 Dictionaries.unset!(d::SQLDictionary, i) = delete!(d, i; _strict=false)
 
-function Base.delete!(d::SQLDictionary, i; _strict=true)
-    res = DBInterface.execute(d.coll.conn, """
-    DELETE FROM $(_tablename(d))
-    WHERE $(@p _colnames(:k_, typeof(i)) map("$_ = ?") join(__, " AND "))
-    RETURNING 1
-    """, _to_tup(i)) |> Tables.rowtable
+function Base.delete!(d::SQLDictionary{I}, i; _strict=true) where {I}
+    res = DBInterface.execute(d.prepared.delete, _to_tup(I, i)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res)); deleted all of them"
     _strict && isempty(res) && throw(KeyError(i))
     return d
 end
 
-function Base.get!(d::SQLDictionary, i, default)
-    colnames = (_colnames(:k_, typeof(i))..., _colnames(:v_, typeof(default))...)
-    res = DBInterface.execute(d.coll.conn, """
-    INSERT INTO
-    $(_tablename(d)) ($(join(colnames, ", ")))
-    VALUES ($(join(fill("?", length(colnames)), ", ")))
-    ON CONFLICT ($(join(_colnames(:k_, typeof(i)), ", ")))
-    DO UPDATE SET rowid = rowid
-    RETURNING $(join(_colnames(:v_, typeof(default)), ", "))
-    """, _to_tup(i, default)) |> Tables.rowtable
+function Base.get!(d::SQLDictionary{I,T}, i, default) where {I,T}
+    res = DBInterface.execute(d.prepared.getexcl, _to_tup(I, i, T, default)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res))"
     return _valoptic(d)(only(res))
 end
 
-function Dictionaries.set!(d::SQLDictionary, i, v)
-    colnames = (_colnames(:k_, typeof(i))..., _colnames(:v_, typeof(v))...)
-    res = DBInterface.execute(d.coll.conn, """
-    INSERT INTO
-    $(_tablename(d)) ($(join(colnames, ", ")))
-    VALUES ($(join(fill("?", length(colnames)), ", ")))
-    ON CONFLICT ($(join(_colnames(:k_, typeof(i)), ", ")))
-    DO UPDATE SET
-    $(@p _colnames(:v_, typeof(v)) map("$_ = excluded.$_") join(__, ", "))
-    RETURNING 1
-    """, _to_tup(i, v)) |> Tables.rowtable
+function Dictionaries.set!(d::SQLDictionary{I,T}, i, v) where {I,T}
+    res = DBInterface.execute(d.prepared.set, _to_tup(I, i, T, v)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res)); updated all of them"
     return d
 end
 
-function Base.insert!(d::SQLDictionary, i, v)
+function Base.insert!(d::SQLDictionary{I,T}, i, v) where {I,T}
     try
-        push!(d.coll, NamedTuple{(_colnames(:k_, typeof(i))..., _colnames(:v_, typeof(v))...)}(_to_tup(i, v)))
+        res = DBInterface.execute(d.prepared.insert, _to_tup(I, i, T, v)) |> Tables.rowtable
     catch e
         occursin(r"unique constraint failed"i, string(e)) ?
             throw(IndexError("already contains key $i")) :
@@ -117,10 +130,13 @@ end
 _keyoptic(d::SQLDictionary{I,T}) where {I,T} = AccessorsExtra.ContainerOptic(NamedTuple{_colnames(Symbol(""), I)}(PropertyLens.(_colnames(:k_, I))))
 _valoptic(d::SQLDictionary{I,T}) where {I,T} = AccessorsExtra.ContainerOptic(NamedTuple{_colnames(Symbol(""), T)}(PropertyLens.(_colnames(:v_, T))))
 
-_to_tup(x::Tuple) = x
-_to_tup(x::NamedTuple) = Tuple(x)
-_to_tup(x) = (x,)
-_to_tup(x, y) = (_to_tup(x)..., _to_tup(y)...)
+# _to_tup(::Typex::Tuple) = x
+function _to_tup(::Type{<:NamedTuple{KS}}, x::NamedTuple{KSx}) where {KS, KSx}
+    issetequal(KS, KSx) || error("Expected keys $KS, got $KSx")
+    Tuple(x[KS])
+end
+# _to_tup(x) = (x,)
+_to_tup(Tx, x, Ty, y) = (_to_tup(Tx, x)..., _to_tup(Ty, y)...)
 
 
 _colnames(prefix::Symbol, ::Type{<:NamedTuple{KS}}) where {KS} = Symbol.(prefix, KS)
