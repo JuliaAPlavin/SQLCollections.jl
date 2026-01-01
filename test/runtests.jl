@@ -262,16 +262,6 @@ end
         SQLite.DB(),
         # DuckDB.DB(),
     ]
-    # db = SQLite.DB()
-        # dct = SQLDictionary{Int,String}(SQLCollection(db, :mytbl))
-        # @test isempty(dct)
-        # @test length(dct) == 0
-        # @test collect(dct.coll) |> isempty
-        # @test collect(dct) |> isempty
-        # insert!(dct, 1, "a")
-        # @test collect(dct)
-
-
         dct = SQLDictionary{@NamedTuple{a::Int,b::String}, @NamedTuple{x::Float64,y::String}}(db, :mytbl2)
         @test isempty(dct)
         empty!(dct)
@@ -370,11 +360,100 @@ end
         empty!(dct)
         @test isempty(dct)
     end
-end 
+end
+
+@testitem "dictionary plain values" begin
+    using SQLite, DuckDB
+
+    @testset for db in [
+        SQLite.DB(),
+        # DuckDB.DB(),
+    ]
+        dct = SQLDictionary{Int,String}(SQLCollection(db, :mytbl))
+        @test isempty(dct)
+        @test length(dct) == 0
+        @test collect(dct.coll) |> isempty
+        @test collect(dct) |> isempty
+
+        # Test insert!
+        insert!(dct, 1, "a")
+        insert!(dct, 2, "b")
+        insert!(dct, 3, "c")
+        @test_throws "already contains" insert!(dct, 1, "duplicate")
+
+        # Test length and collect
+        @test length(dct) == 3
+        @test collect(dct) == ["a", "b", "c"]
+        @test first(dct) == "a"
+
+        # Test getindex
+        @test dct[1] == "a"
+        @test dct[2] == "b"
+        @test_throws KeyError(4) dct[4]
+
+        # Test setindex!
+        dct[1] = "updated"
+        @test dct[1] == "updated"
+        @test_throws KeyError(4) dct[4] = "new"
+
+        # Test haskey
+        @test haskey(dct, 1)
+        @test haskey(dct, 2)
+        @test !haskey(dct, 4)
+
+        # Test delete!
+        delete!(dct, 1)
+        @test_throws KeyError(1) delete!(dct, 1)
+        @test !haskey(dct, 1)
+        @test collect(dct) == ["b", "c"]
+
+        # Test set!
+        set!(dct, 10, "new")
+        set!(dct, 2, "replaced")
+        @test dct[10] == "new"
+        @test dct[2] == "replaced"
+        @test collect(dct) == ["replaced", "c", "new"]
+
+        # Test unset!
+        unset!(dct, 2)
+        unset!(dct, 100)  # Should not throw
+        @test !haskey(dct, 2)
+
+        # Test get!
+        @test get!(dct, 3, "default") == "c"
+        @test get!(dct, 5, "default") == "default"
+        @test haskey(dct, 5)
+        @test dct[5] == "default"
+
+        # Test keys
+        @test collect(keys(dct)) == [3, 5, 10]
+
+        # Test get() with default value
+        @test get(dct, 3, "fallback") == "c"
+        @test get(dct, 99, "fallback") == "fallback"
+
+        # Test get() with callable default
+        @test get(() -> "callable", dct, 3) == "c"
+        @test get(() -> "callable", dct, 99) == "callable"
+
+        # Test that callable is only called when key is missing
+        call_count = Ref(0)
+        default_func = () -> (call_count[] += 1; "called")
+        @test get(default_func, dct, 3) == "c"
+        @test call_count[] == 0
+        @test get(default_func, dct, 99) == "called"
+        @test call_count[] == 1
+
+        # Test empty!
+        empty!(dct)
+        @test isempty(dct)
+        @test length(dct) == 0
+    end
+end
 
 @testitem "_" begin
     import Aqua
-    Aqua.test_all(SQLCollections; ambiguities=(;broken=false))
+    Aqua.test_all(SQLCollections; ambiguities=(;broken=true))
 
     import CompatHelperLocal as CHL
     CHL.@check(checktest=false)

@@ -6,8 +6,6 @@ struct SQLDictionary{I,T}
 end
 
 function SQLDictionary{I,T}(coll::SQLCollection) where {I,T}
-    @assert I <: NamedTuple
-    @assert T <: NamedTuple
     if !exists(coll)
         coll = _create!(coll,
             NamedTuple{_colnames(:k_, I), Tuple{_coltypes(I)...}},
@@ -99,36 +97,37 @@ end
 Base.length(d::SQLDictionary) = length(d.coll)
 Base.isempty(d::SQLDictionary) = isempty(d.coll)
 
-Base.collect(d::SQLDictionary) = collect(map(_valoptic(d), d.coll))
-Base.first(d::SQLDictionary) = first(map(_valoptic(d), d.coll))
+Base.collect(d::SQLDictionary{I,T}) where {I,T} = _extract_values(T, collect(map(_valoptic(d), d.coll)))
+Base.first(d::SQLDictionary{I,T}) where {I,T} = _extract_value(T, first(map(_valoptic(d), d.coll)))
 
-Base.keys(d::SQLDictionary) = map(_keyoptic(d), d.coll)
+Base.keys(d::SQLDictionary{<:NamedTuple}) = map(_keyoptic(d), d.coll)
+Base.keys(d::SQLDictionary{I}) where {I} = _extract_values(I, collect(map(_keyoptic(d), d.coll)))
 
 Dictionaries.issettable(::SQLDictionary) = true
 Dictionaries.isinsertable(::SQLDictionary) = true
 
 function Base.haskey(d::SQLDictionary{I}, i) where {I}
     res = DBInterface.execute(d.prepared.haskey, _to_tup(I, i)) |> Tables.rowtable
-    @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(vals))"
+    @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res))"
     return !isempty(res)
 end
 
-function Base.getindex(d::SQLDictionary{I}, i) where {I}
+function Base.getindex(d::SQLDictionary{I,T}, i) where {I,T}
     res = DBInterface.execute(d.prepared.getindex, _to_tup(I, i)) |> Tables.rowtable
-    @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(vals))"
+    @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res))"
     isempty(res) && throw(KeyError(i))
-    return _valoptic(d)(only(res))
+    return _extract_value(T, _valoptic(d)(only(res)))
 end
 
 Base.get(d::SQLDictionary, i, default) = get(Returns(default), d, i)
 
-function Base.get(f::Base.Callable, d::SQLDictionary{I}, i) where {I}
+function Base.get(f::Base.Callable, d::SQLDictionary{I,T}, i) where {I,T}
     res = DBInterface.execute(d.prepared.getindex, _to_tup(I, i)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res))"
-    return isempty(res) ? f() : _valoptic(d)(only(res))
+    return isempty(res) ? f() : _extract_value(T, _valoptic(d)(only(res)))
 end
 
-function Base.setindex!(d::SQLDictionary{I,T}, v::NamedTuple, i) where {I,T}
+function Base.setindex!(d::SQLDictionary{I,T}, v, i) where {I,T}
     res = DBInterface.execute(d.prepared.setindex, _to_tup(T, v, I, i)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res)); updated all of them"
     isempty(res) && throw(KeyError(i))
@@ -147,7 +146,7 @@ end
 function Base.get!(d::SQLDictionary{I,T}, i, default) where {I,T}
     res = DBInterface.execute(d.prepared.getexcl, _to_tup(I, i, T, default)) |> Tables.rowtable
     @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res))"
-    return _valoptic(d)(only(res))
+    return _extract_value(T, _valoptic(d)(only(res)))
 end
 
 function Dictionaries.set!(d::SQLDictionary{I,T}, i, v) where {I,T}
@@ -170,16 +169,32 @@ end
 Base.empty!(d::SQLDictionary) = (empty!(d.coll); d)
 
 
-_keyoptic(d::SQLDictionary{I,T}) where {I,T} = AccessorsExtra.ContainerOptic(NamedTuple{_colnames(Symbol(""), I)}(PropertyLens.(_colnames(:k_, I))))
-_valoptic(d::SQLDictionary{I,T}) where {I,T} = AccessorsExtra.ContainerOptic(NamedTuple{_colnames(Symbol(""), T)}(PropertyLens.(_colnames(:v_, T))))
+_keyoptic(d::SQLDictionary{I,T}) where {I<:NamedTuple,T} =
+    AccessorsExtra.ContainerOptic(NamedTuple{_colnames(Symbol(""), I)}(PropertyLens.(_colnames(:k_, I))))
+_valoptic(d::SQLDictionary{I,T}) where {I,T<:NamedTuple} =
+    AccessorsExtra.ContainerOptic(NamedTuple{_colnames(Symbol(""), T)}(PropertyLens.(_colnames(:v_, T))))
 
-# _to_tup(::Typex::Tuple) = x
+_keyoptic(d::SQLDictionary{I,T}) where {I,T} =
+    AccessorsExtra.ContainerOptic(NamedTuple{(:_,)}((PropertyLens(:k_),)))
+_valoptic(d::SQLDictionary{I,T}) where {I,T} =
+    AccessorsExtra.ContainerOptic(NamedTuple{(:_,)}((PropertyLens(:v_),)))
+
+
 function _to_tup(::Type{<:NamedTuple{KS}}, x::NamedTuple{KSx}) where {KS, KSx}
     issetequal(KS, KSx) || error("Expected keys $KS, got $KSx")
     Tuple(x[KS])
 end
-# _to_tup(x) = (x,)
+function _to_tup(::Type{T}, x) where {T}
+    @assert !(T <: NamedTuple || T <: Tuple)
+    @assert !(x isa NamedTuple || x isa Tuple)
+    (x,)
+end
 _to_tup(Tx, x, Ty, y) = (_to_tup(Tx, x)..., _to_tup(Ty, y)...)
+
+_extract_values(::Type{<:NamedTuple}, x) = x
+_extract_values(::Type{T}, x) where {T} = map(nt -> nt._, x)
+_extract_value(::Type{<:NamedTuple}, x::NamedTuple) = x
+_extract_value(::Type{T}, x::@NamedTuple{_::T}) where {T} = x._
 
 
 _colnames(prefix::Symbol, ::Type{<:NamedTuple{KS}}) where {KS} = Symbol.(prefix, KS)
