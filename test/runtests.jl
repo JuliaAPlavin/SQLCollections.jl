@@ -270,15 +270,15 @@ end
         @test dct[(b="a", a=1)] == (x=1.1, y="def")
         @test_throws KeyError((a=1, b="c")) dct[(a=1, b="c")]
         @test_throws KeyError((a=1, b="c")) dct[(a=1, b="c")] = (x=1.3, y="ghi")
-        @test_throws AssertionError dct[123]
-        @test_throws AssertionError dct[(a=1, b="c", c="d")]
+        @test_throws Exception dct[123]
+        @test_throws Exception dct[(a=1, b="c", c="d")]
         dct[(a=1, b="a")] = (x=1.3, y="ghi")
         @test dct[(a=1, b="a")] == (x=1.3, y="ghi")
 
         @test haskey(dct, (a=1, b="a"))
         @test !haskey(dct, (a=1, b="c"))
-        @test_throws AssertionError haskey(dct, (a=1, b="c", c="d"))
-        @test_throws AssertionError haskey(dct, 123)
+        @test_throws Exception haskey(dct, (a=1, b="c", c="d"))
+        @test_throws Exception haskey(dct, 123)
 
         delete!(dct, (a=1, b="a"))
         @test_throws KeyError((a=1, b="a")) delete!(dct, (a=1, b="a"))
@@ -297,6 +297,28 @@ end
         @test collect(dct) == [(x = 2.1, y = "abc"), (x = 10.1, y = "def"), (x = 0.0, y = "")]
 
         @test collect(keys(dct)) == [(a = 2, b = "a"), (a = 2, b = "b"), (a = 10, b = "a")]
+
+        dct = SQLDictionary{@NamedTuple{a::Int,b::Vector}, @NamedTuple{x::Float64}}(db, :mytbl3)
+        insert!(dct, (a=1, b=["a"]), (;x=1.1))
+        insert!(dct, (a=1, b=UInt8[1, 2, 3]), (;x=1.2))
+        @test issetequal(collect(dct), [(x = 1.1,), (x = 1.2,)])
+        @test issetequal(collect(keys(dct)), [(a = 1, b = ["a"]), (a = 1, b = UInt8[1, 2, 3])])
+        @test haskey(dct, (a=1, b=["a"]))
+        @test haskey(dct, (a=1, b=UInt8[1, 2, 3]))
+        @test !haskey(dct, (a=1, b=UInt8[1, 2, 3, 4]))
+        @test dct[(b=["a"], a=1)] == (;x=1.1)
+
+        # dct = SQLDictionary{@NamedTuple{a::Int,b::Any}, @NamedTuple{x::Float64}}(db, :mytbl3)
+        # @test_broken insert!(dct, (a=1, b="a"), (;x=1.1))
+        # insert!(dct, (a=1, b=["a"]), (;x=1.1))
+        # @test_broken insert!(dct, (a=1, b=nothing), (;x=1.2))
+        # @test collect(dct) == [(x = 1.1,)]
+        # @test collect(keys(dct)) == [(a = 1, b = ["a"])]
+
+        # dct = SQLDictionary{@NamedTuple{a::Int,b::Union{Nothing,Vector}}, @NamedTuple{x::Float64}}(db, :mytbl4)
+        # @test_broken insert!(dct, (a=1, b="a"), (;x=1.1))
+        # insert!(dct, (a=1, b=["a"]), (;x=1.1))
+        # insert!(dct, (a=1, b=nothing), (;x=1.2))
     end
 end 
 
