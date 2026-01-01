@@ -87,6 +87,8 @@ using TestItemRunner
             (@f map(@o _[sr"i", sr"d(.*)" => ss"ddd\1"])),
             # (@f map(@o (;_[(:j, :i)]...))),
             (@f mapinsert(a=@o Float64(_.i) / 2)),
+            (@f mapinsert⁻(a=@o Float64(_.i) / 2)),
+            (@f mapinsert⁻(a=@o _.i + _.j)),
             (@f mapset(i=@o round(2*_.j))),
             (@f filter(@o _.i != 2) map(@o (a=ifelse(_.i > 6, 1, 0),)) filter(@o _.a == 1)),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0),)) unique()),
@@ -126,6 +128,7 @@ using TestItemRunner
                 gf = g(f(tbl))
                 gd = g(f(data))
                 @test nameof(typeof(gf)) == nameof(typeof(gd))
+                # @test issetequal(gf, gd)
                 @test isequal(gf, gd)
             end
         end
