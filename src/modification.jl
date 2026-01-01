@@ -14,3 +14,9 @@ function Base.copy!(dbc::SQLCollection, rows)
 end
 
 function _copy_impl! end
+
+function Base.empty!(dbc::SQLCollection)
+	tblname = _tablename(dbc)
+	DBInterface.execute(dbc.conn, "delete from $tblname")
+	return dbc
+end

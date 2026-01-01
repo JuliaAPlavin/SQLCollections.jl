@@ -127,6 +127,9 @@ function Base.insert!(d::SQLDictionary{I,T}, i, v) where {I,T}
     return d
 end
 
+Base.empty!(d::SQLDictionary) = (empty!(d.coll); d)
+
+
 _keyoptic(d::SQLDictionary{I,T}) where {I,T} = AccessorsExtra.ContainerOptic(NamedTuple{_colnames(Symbol(""), I)}(PropertyLens.(_colnames(:k_, I))))
 _valoptic(d::SQLDictionary{I,T}) where {I,T} = AccessorsExtra.ContainerOptic(NamedTuple{_colnames(Symbol(""), T)}(PropertyLens.(_colnames(:v_, T))))
 

@@ -34,7 +34,15 @@ using TestItemRunner
         tbl = SQLCollection(db, :mytbl)
         @test !exists(tbl)
         @test !exists(SQLCollection(db, "mytbl"))
+
         @test copy!(tbl, data) === tbl
+        tbl = SQLCollection(db, :mytbl)
+        @test length(tbl) == 10
+        empty!(tbl)
+        @test isempty(tbl)
+        copy!(tbl, data)
+        copy!(tbl, data)
+        
         tbl = SQLCollection(db, :mytbl)
         @test exists(tbl)
         @test exists(SQLCollection(db, "mytbl"))
@@ -249,6 +257,8 @@ end
 
         dct = SQLDictionary{@NamedTuple{a::Int,b::String}, @NamedTuple{x::Float64,y::String}}(db, :mytbl2)
         @test isempty(dct)
+        empty!(dct)
+        @test isempty(dct)
         @test length(dct) == 0
         @test collect(dct.coll) |> isempty
         @test collect(dct) |> isempty
@@ -320,6 +330,9 @@ end
         # @test_broken insert!(dct, (a=1, b="a"), (;x=1.1))
         # insert!(dct, (a=1, b=["a"]), (;x=1.1))
         # insert!(dct, (a=1, b=nothing), (;x=1.2))
+
+        empty!(dct)
+        @test isempty(dct)
     end
 end 
 
