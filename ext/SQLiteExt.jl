@@ -4,7 +4,12 @@ using SQLite
 import SQLCollections: _copy_impl!, _create_impl!
 using SQLCollections: @p
 
-_copy_impl!(conn::SQLite.DB, rows, tblname::Symbol) = SQLite.load!(rows, conn, string(tblname); ifnotexists=false)
+function _copy_impl!(conn::SQLite.DB, rows, tblname::Symbol)
+    if !isnothing(SQLite.tableinfo(conn, string(tblname)))
+        DBInterface.execute(conn, "DELETE FROM $tblname")
+    end
+    SQLite.load!(rows, conn, string(tblname); ifnotexists=false)
+end
 
 _create_impl!(conn::SQLite.DB, tblname::Symbol, T::Type) = SQLite.createtable!(conn, string(tblname), SQLite.Tables.Schema(T))
 
