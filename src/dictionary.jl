@@ -53,6 +53,20 @@ function Base.delete!(d::SQLDictionary, i; _strict=true)
     return d
 end
 
+function Base.get!(d::SQLDictionary, i, default)
+    colnames = (_colnames(:k_, typeof(i))..., _colnames(:v_, typeof(default))...)
+    res = DBInterface.execute(d.coll.conn, """
+    INSERT INTO
+    $(_tablename(d)) ($(join(colnames, ", ")))
+    VALUES ($(join(fill("?", length(colnames)), ", ")))
+    ON CONFLICT ($(join(_colnames(:k_, typeof(i)), ", ")))
+    DO UPDATE SET rowid = rowid
+    RETURNING $(join(_colnames(:v_, typeof(default)), ", "))
+    """, _to_tup(i, default)) |> Tables.rowtable
+    @assert length(res) ≤ 1 "Didn't expect multiple values for key $i, got $(length(res))"
+    return _valoptic(d)(only(res))
+end
+
 function Dictionaries.set!(d::SQLDictionary, i, v)
     colnames = (_colnames(:k_, typeof(i))..., _colnames(:v_, typeof(v))...)
     res = DBInterface.execute(d.coll.conn, """
@@ -108,18 +122,3 @@ end
 _tablename(d::SQLDictionary) = _tablename(d.coll)
 
 function _create_impl! end
-
-# * `getindex(::AbstractDictionary{I, T}, ::I) --> T`
-# * `isassigned(::AbstractDictionary{I}, ::I) --> Bool`
-# * `keys(::AbstractDictionary{I, T}) --> AbstractIndices{I}`
-
-# If values can be set/mutated, then an `AbstractDictionary` should implement:
-
-# * `issettable(::AbstractDictionary)` (returning `true`)
-# * `setindex!(dict::AbstractDictionary{I, T}, ::T, ::I}` (returning `dict`)
-
-# If arbitrary indices can be added to or removed from the dictionary, implement:
-
-# * `isinsertable(::AbstractDictionary)` (returning `true`)
-# * `insert!(dict::AbstractDictionary{I, T}, ::I, ::T}` (returning `dict`)
-# * `delete!(dict::AbstractDictionary{I, T}, ::I}` (returning `dict`)

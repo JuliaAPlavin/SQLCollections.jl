@@ -244,7 +244,11 @@ end
         unset!(dct, (a=100, b="a"))
         @test collect(dct) == [(x = 2.1, y = "abc"), (x = 10.1, y = "def")]
 
-        @test collect(keys(dct)) == [(a = 2, b = "a"), (a = 10, b = "a")]
+        @test get!(dct, (a=2, b="a"), (x=0.0, y="")) == (x=2.1, y="abc")
+        @test get!(dct, (a=2, b="b"), (x=0.0, y="")) == (x=0.0, y="")
+        @test collect(dct) == [(x = 2.1, y = "abc"), (x = 10.1, y = "def"), (x = 0.0, y = "")]
+
+        @test collect(keys(dct)) == [(a = 2, b = "a"), (a = 2, b = "b"), (a = 10, b = "a")]
     end
 end 
 
