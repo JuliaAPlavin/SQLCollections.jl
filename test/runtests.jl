@@ -246,7 +246,7 @@ end
         # @test collect(dct)
 
 
-        dct = SQLDictionary{@NamedTuple{a::Int,b::String}, @NamedTuple{x::Float64,y::String}}(SQLCollection(db, :mytbl2))
+        dct = SQLDictionary{@NamedTuple{a::Int,b::String}, @NamedTuple{x::Float64,y::String}}(db, :mytbl2)
         @test isempty(dct)
         @test length(dct) == 0
         @test collect(dct.coll) |> isempty
