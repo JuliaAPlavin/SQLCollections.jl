@@ -215,6 +215,7 @@ end
         @testset for f in [
             (@f group_vg(@o (a=round(_.i / 3.5),)) map(key) collect),
             # (@f group_vg(@o _[(:i,)]) map(key) collect),
+            (@f filter(@o _.i ≥ 2) group_vg(@o (a=round(_.i / 3.5),)) map(key) collect),
             (@f map(@o (i=_.i, b=round(_.i/4.5))) group_vg(@o (a=_.i / 3.5,)) map(@o (a=key(_).a, avg=mean(_.b), cnt=length(_))) collect),
         ]
             @test issetequal(f(tbl), f(data))
