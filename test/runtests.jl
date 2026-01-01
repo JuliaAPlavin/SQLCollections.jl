@@ -67,7 +67,7 @@ using TestItemRunner
             ([DuckDB.DB], @f filter(@o year(_.d) > 2005)),
             ([DuckDB.DB], @f filter(@o _.d > Date(2005))),
             (@f map(@o (a=_.j + 1,))),
-            (@f map(@o (a=_.j * 10, b=_.i + 1))),
+            (@f map(@o (a=_.j * 10, b=_.i + 1, c=rad2deg(_.i), d=deg2rad(_.j)))),
             (@f map(@o (a=_.j * 10, b=_.i + _.j + 1))),
             (@f map(@o (a=_.j > 5, b=_.i + _.j + 1))),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i)))),
