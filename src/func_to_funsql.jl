@@ -7,6 +7,16 @@ func_to_funsql(f::Returns, arg) = f.value
 func_to_funsql(f::PropertyLens{P}, ::Nothing) where {P} = getproperty(Get, P)
 func_to_funsql(f::PropertyLens{P}, arg) where {P} = getproperty(arg, P)  # to support Join as input; clash with nested structs?
 
+function func_to_funsql(f::ComposedFunction{<:Base.Fix2{typeof(==)}, <:AccessorsExtra.ContainerOptic}, arg)
+	@assert f.outer.x isa NamedTuple
+	@assert f.inner.optics isa NamedTuple
+	@assert keys(f.outer.x) == keys(f.inner.optics)
+	func = mapreduce(⩓, keys(f.outer.x)) do k
+		==(f.outer.x[k]) ∘ f.inner.optics[k]
+	end
+	return func_to_funsql(func, arg)
+end
+
 func_to_funsql(::typeof(ismissing), arg) = Fun.is_null(arg)
 func_to_funsql(::typeof(isnothing), arg) = Fun.is_null(arg)
 func_to_funsql(f::Base.Fix2{typeof(in), <:Union{Tuple,AbstractVector}}, arg) = Fun.in(arg, f.x...)

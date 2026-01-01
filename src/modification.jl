@@ -1,6 +1,5 @@
 function Base.push!(dbc::SQLCollection, row::NamedTuple)
-	@assert dbc.query[] isa FunSQL.FromNode
-	tblname = dbc.query[].source::Symbol
+	tblname = _tablename(dbc)
 	names = colnames(dbc)
 	@assert issetequal(keys(row), names)  (keys(row), names)
 	DBInterface.execute(dbc.conn, "insert into $tblname values ($(join(fill("?", length(names)), ", ")))", (row[collect(names)]...,))
@@ -8,9 +7,7 @@ function Base.push!(dbc::SQLCollection, row::NamedTuple)
 end
 
 function Base.copy!(dbc::SQLCollection, rows)
-	@assert dbc.query[] isa FunSQL.FromNode
-	tblname = dbc.query[].source::Symbol
-	_copy_impl!(dbc.conn.raw, rows, tblname)
+	_copy_impl!(dbc.conn.raw, rows, _tablename(dbc))
 	return dbc
 end
 
