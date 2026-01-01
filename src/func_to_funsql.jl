@@ -10,7 +10,7 @@ func_to_funsql(f::PropertyLens{P}, arg) where {P} = getproperty(arg, P)  # to su
 function func_to_funsql(f::ComposedFunction{<:Base.Fix2{typeof(==)}, <:AccessorsExtra.ContainerOptic}, arg)
 	@assert f.outer.x isa NamedTuple
 	@assert f.inner.optics isa NamedTuple
-	@assert keys(f.outer.x) == keys(f.inner.optics)
+	@assert issetequal(keys(f.outer.x), keys(f.inner.optics)) (keys(f.outer.x), keys(f.inner.optics))
 	func = mapreduce(⩓, keys(f.outer.x)) do k
 		==(f.outer.x[k]) ∘ f.inner.optics[k]
 	end
