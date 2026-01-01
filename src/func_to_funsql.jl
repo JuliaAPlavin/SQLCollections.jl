@@ -35,6 +35,7 @@ func_to_funsql(f::⩓, arg) = Fun.and(func_to_funsql(f.f, arg), func_to_funsql(f
 func_to_funsql(f::⩔, arg) = Fun.or(func_to_funsql(f.f, arg), func_to_funsql(f.g, arg))
 
 func_to_funsql(f::AccessorsExtra.FixArgsT(ifelse, (AccessorsExtra.Placeholder, Any, Any)), arg) = Fun.case(arg, f.args[2], f.args[3])
+func_to_funsql(f::typeof(ifelse), arg, args...) = Fun.case(arg, args...)
 
 func_to_funsql(::Type{Float64}, arg) = Fun.cast(arg, "REAL")
 

@@ -102,6 +102,7 @@ using TestItemRunner
             (@f sort(by=(@o _.i), rev=true)),
             (@f sort(by=(@o DataManipulation.rev(_.i)))),
             (@f filter(@o _.j ∈ (0.1, 0.5, 0.6) || _.i > 8) sort(by=(@o _.i))),
+            (@f map(@o (a=ifelse(_.i > 6, _.j, 1), b=ifelse(_.i > 6, _.j, -_.j), c=ifelse(true, _.j, -_.j)))),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) first(__, 2)),
             (@f sort(by=(@o (_.i, DataManipulation.rev(_.j)))) first(__, 2)),
             (@f sort(by=(@o (_.i, -_.j)), rev=true) Iterators.drop(__, 5) Iterators.take(__, 2) first(__, 3)),
@@ -191,6 +192,9 @@ using TestItemRunner
             @test issetequal(f(tbl), f(data))
             @test f(tbl) == f(data)
         end
+
+        # f = @f map(@o complex(_.i, _.j)) filter(@o real(_) > 3) map(abs)
+        # @test f(tbl) == f(data)
     end
 end
 
