@@ -69,7 +69,7 @@ using TestItemRunner
             (@f map(@o (a=_.j + 1,))),
             (@f map(@o (a=_.j * 10, b=_.i + 1, c=rad2deg(_.i), d=deg2rad(_.j)))),
             (@f map(@o (a=_.j * 10, b=_.i + _.j + 1))),
-            (@f map(@o (a=_.j > 5, b=_.i + _.j + 1))),
+            (@f map(@o (a=_.j > 5, b=_.i + _.j + 1, c=rad2deg(_.i) * deg2rad(_.j)))),
             (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i)))),
             (@f map(@o (a=missing, b=ifelse(_.i > 6, 1, missing), c=ismissing(ifelse(_.i > 6, 1, missing)), d=coalesce(ifelse(_.i > 6, 1, missing), 123)))),
             ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt)))),
