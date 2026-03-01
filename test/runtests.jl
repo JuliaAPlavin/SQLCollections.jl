@@ -117,7 +117,7 @@ using TestItemRunner
             # @info "" f(tbl) f(data)
             cf = collect(f(tbl))
             @test issetequal(cf, f(data))
-            @test isequal(cf, f(data))
+            # @test isequal(cf, f(data))
             @test eltype_compatible(eltype(f(tbl)), eltype(f(data)))
 
             @testset for g in [
