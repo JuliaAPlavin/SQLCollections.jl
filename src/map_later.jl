@@ -35,5 +35,10 @@ Iterators.filter(pred, mc::MappedLaterSQLCollection) = filter(pred, mc)
 Base.sort(mc::MappedLaterSQLCollection; kwargs...) = MappedLaterSQLCollection(mc.func, sort(mc.coll; kwargs...))
 
 Base.first(mc::MappedLaterSQLCollection, n::Integer) = MappedLaterSQLCollection(mc.func, first(mc.coll, n))
+Base.first(mc::MappedLaterSQLCollection) = first(collect(first(mc, 1)))
+Base.only(mc::MappedLaterSQLCollection) = only(collect(first(mc, 2)))
 Iterators.take(mc::MappedLaterSQLCollection, n::Integer) = MappedLaterSQLCollection(mc.func, Iterators.take(mc.coll, n))
 Iterators.drop(mc::MappedLaterSQLCollection, n::Integer) = MappedLaterSQLCollection(mc.func, Iterators.drop(mc.coll, n))
+
+Base.length(mc::MappedLaterSQLCollection) = length(mc.coll)
+Base.isempty(mc::MappedLaterSQLCollection) = isempty(mc.coll)

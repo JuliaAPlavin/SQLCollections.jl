@@ -269,6 +269,14 @@ using TestItemRunner
             ref = map(r -> (s=r.s, d=r.d, dt=r.dt, aaa=r.i, b=complex(r.i, r.j)), data)
             @test collect(mc) == ref
             @test collect(filter(@o(_.i > 5), mc)) == filter(@o(_.aaa > 5), ref)
+
+            # scalar operations on MappedLaterSQLCollection
+            f = @o (i=_.i, b=complex(_.i, _.j))
+            mc = SQLCollections.map_later(f, tbl)
+            @test length(mc) == length(data)
+            @test !isempty(mc)
+            @test first(mc) == first(collect(mc))
+            @test only(filter(@o(_.i == 3), mc)) == only(filter(@o(_.i == 3), collect(mc)))
         end
     end
 end
