@@ -17,7 +17,7 @@ function Base.intersect(dbc_a::SQLCollection, dbc_b::SQLCollection)
     jcond = Fun.and(map(col -> Fun.:(==)(Get[col], Get.b[col]), cols)...)
     q_b = dbc_b.query
     @modify(dbc_a.query) do q_a
-        q_a |> Join(:b => dbc_b.query, jcond)
+        q_a |> Join(:b => dbc_b.query, jcond) |> Group(cols...) |> Select(cols...)
     end
 end
 
@@ -29,7 +29,7 @@ function Base.union(dbc_a::SQLCollection, dbc_b::SQLCollection)
     sels = map(col -> col => Fun.coalesce(Get[col], Get.b[col]), cols)
     q_b = dbc_b.query
     @modify(dbc_a.query) do q_a
-        q_a |> Join(:b => dbc_b.query, jcond, left=true, right=true) |> Select(sels...)
+        q_a |> Join(:b => dbc_b.query, jcond, left=true, right=true) |> Select(sels...) |> Group(cols...) |> Select(cols...)
     end
 end
 
@@ -41,6 +41,6 @@ function Base.setdiff(dbc_a::SQLCollection, dbc_b::SQLCollection)
     wcond = Fun.and(map(col -> Fun.is_null(Get.b[col]), cols)...)
     q_b = dbc_b.query
     @modify(dbc_a.query) do q_a
-        q_a |> Join(:b => dbc_b.query, jcond, left=true) |> Where(wcond)
+        q_a |> Join(:b => dbc_b.query, jcond, left=true) |> Where(wcond) |> Group(cols...) |> Select(cols...)
     end
 end

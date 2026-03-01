@@ -157,6 +157,21 @@ using TestItemRunner
                 d2 = @p data filter(@o _.j < 0.8) map(@o (x=_.i,))
                 setdiff(d1, d2)
             end,
+            function (data)
+                d1 = @p data map(@o (x=_.i > 5,))
+                d2 = @p data filter(@o _.i <= 3) map(@o (x=_.i > 5,))
+                intersect(d1, d2)
+            end,
+            function (data)
+                d1 = @p data map(@o (x=_.i > 5,))
+                d2 = @p data filter(@o _.i <= 3) map(@o (x=_.i > 5,))
+                union(d1, d2)
+            end,
+            function (data)
+                d1 = @p data map(@o (x=_.i > 5,))
+                d2 = @p data filter(@o _.i <= 3) map(@o (x=_.i > 5,))
+                setdiff(d1, d2)
+            end,
         ]
             if f isa Tuple
                 dbs, f = f
