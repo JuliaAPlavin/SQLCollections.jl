@@ -10,7 +10,12 @@ function Base.push!(dbc::SQLCollection, row::NamedTuple)
 end
 
 function Base.copy!(dbc::SQLCollection, rows)
-	_copy_impl!(dbc.conn.raw, rows, _tablename(dbc), dbc.conn.catalog.dialect)
+	tblname = _tablename(dbc)
+	_copy_impl!(dbc.conn.raw, rows, tblname, dbc.conn.catalog.dialect)
+	if !haskey(dbc.conn.catalog.tables, tblname)
+		new_cat = FunSQL.reflect(dbc.conn.raw; dbc.conn.catalog.dialect)
+		dbc.conn.catalog.tables[tblname] = new_cat.tables[tblname]
+	end
 	return dbc
 end
 
@@ -23,7 +28,9 @@ function Base.empty!(dbc::SQLCollection)
 end
 
 function drop!(dbc::SQLCollection)
-	qtblname = _quote_ident(_tablename(dbc), dbc.conn)
+	tblname = _tablename(dbc)
+	qtblname = _quote_ident(tblname, dbc.conn)
 	DBInterface.execute(dbc.conn, "drop table $qtblname")
+	delete!(dbc.conn.catalog.tables, tblname)
 	return dbc
 end

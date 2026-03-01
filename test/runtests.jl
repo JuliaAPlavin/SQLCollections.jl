@@ -36,23 +36,17 @@ using TestItemRunner
         @test !exists(SQLCollection(db, "mytbl"))
 
         @test copy!(tbl, data) === tbl
-        @test_broken exists(tbl)
-        tbl = SQLCollection(db, :mytbl)
         @test exists(tbl)
         @test length(tbl) == 10
         empty!(tbl)
         @test exists(tbl)
         @test isempty(tbl)
         SQLCollections.drop!(tbl)
-        @test_broken !exists(tbl)
-        tbl = SQLCollection(db, :mytbl)
         @test !exists(tbl)
         copy!(tbl, data)
         copy!(tbl, data)
-        tbl = SQLCollection(db, :mytbl)
         @test length(tbl) == 10
-        
-        tbl = SQLCollection(db, :mytbl)
+
         @test exists(tbl)
         @test exists(SQLCollection(db, "mytbl"))
 
