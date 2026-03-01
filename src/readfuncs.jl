@@ -34,7 +34,7 @@ Iterators.take(dbc::SQLCollection, n::Integer) = @modify(dbc.query) do q
 end
 
 Iterators.drop(dbc::SQLCollection, n::Integer) = @modify(dbc.query) do q
-	q |> Limit(n, typemax(Int))
+	q |> Limit(n, nothing)
 end
 
 Base.first(dbc::SQLCollection) = first(dbc, 1) |> collect |> first

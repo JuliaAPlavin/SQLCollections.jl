@@ -483,6 +483,23 @@ end
     end
 end
 
+@testitem "edge cases" begin
+    using SQLite, DuckDB
+
+    @testset for db in [
+        SQLite.DB(),
+        DuckDB.DB(),
+    ]
+        data = [(;i, j=i/10) for i in 1:10]
+        copy!(SQLCollection(db, :mytbl), data)
+        tbl = SQLCollection(db, :mytbl)
+
+        # drop should not use typemax(Int) as LIMIT
+        sql = string(SQLCollections.FunSQL.render(tbl.conn, Iterators.drop(tbl, 5).query))
+        @test !occursin("9223372036854775807", sql)
+    end
+end
+
 @testitem "_" begin
     import Aqua
     Aqua.test_all(SQLCollections; ambiguities=(;broken=true))
