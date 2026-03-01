@@ -96,6 +96,8 @@ using TestItemRunner
             # (@f unique(@o _.i > 6)),
             (@f map(@o (a=string(_.i, "%"), b=string("x: ", _.j) * " and", c=string("y: ", _.i*10, " kg")))),
             (@f map(@o (a=uppercase(_.s), b=lowercase(_.s * "XX"), c=isempty(_.s)))),
+            (@f filter(@o !isempty(_.s))),
+            (@f map(@o (a=isempty(_.s), b=isempty(_.s * "x")))),
             (@f map(@o (a=startswith(_.s, "cc"), b=endswith(_.s, "dd"), d=occursin("eee", _.s), e=startswith(_.s, "a%")))),
             ([DuckDB.DB], @f map(@o (a=occursin("EeE", _.s), b=replace(_.s, r"e+" => "xxx"), c=replace(_.s, "e+" => "xxx"), d=replace(_.s, "bb" => "xxx")))),
             (@f map(@o (a=format(Format("x %d"), _.i),))),
