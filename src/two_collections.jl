@@ -21,17 +21,7 @@ function Base.intersect(dbc_a::SQLCollection, dbc_b::SQLCollection)
     end
 end
 
-function Base.union(dbc_a::SQLCollection, dbc_b::SQLCollection)
-    @assert dbc_a.conn.raw == dbc_b.conn.raw
-    cols = collect(colnames(dbc_a))
-    @assert issetequal(cols, colnames(dbc_b))
-    jcond = Fun.or(map(col -> Fun.:(==)(Get[col], Get._rhs_[col]), cols)...)
-    sels = map(col -> col => Fun.coalesce(Get[col], Get._rhs_[col]), cols)
-    q_b = dbc_b.query
-    @modify(dbc_a.query) do q_a
-        q_a |> Join(:_rhs_ => dbc_b.query, jcond, left=true, right=true) |> Select(sels...) |> Group(cols...) |> Select(cols...)
-    end
-end
+Base.union(dbc_a::SQLCollection, dbc_b::SQLCollection) = unique(vcat(dbc_a, dbc_b))
 
 function Base.setdiff(dbc_a::SQLCollection, dbc_b::SQLCollection)
     @assert dbc_a.conn.raw == dbc_b.conn.raw

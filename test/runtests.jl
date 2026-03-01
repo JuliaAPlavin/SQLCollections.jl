@@ -148,6 +148,11 @@ using TestItemRunner
                 union(d1, d2)
             end,
             function (data)
+                d1 = @p data filter(@o _.j > 0.3) map(@o (x=_.i, y=_.j))
+                d2 = @p data filter(@o _.j < 0.8) map(@o (x=_.i, y=_.j))
+                union(d1, d2)
+            end,
+            function (data)
                 d1 = @p data filter(@o _.j > 0.3) map(@o (x=_.i,))
                 d2 = @p data filter(@o _.j < 0.8) map(@o (x=_.i,))
                 intersect(d1, d2)
@@ -196,6 +201,15 @@ using TestItemRunner
             cf = collect(f(tbl))
             @test issetequal(cf, f(data))
             @test eltype_compatible(eltype(f(tbl)), eltype(f(data)))
+        end
+
+        @testset "different columns" begin
+            d1 = @p tbl map(@o (x=_.i,))
+            d2 = @p tbl map(@o (y=_.j,))
+            @test_throws AssertionError union(d1, d2)
+            @test_throws AssertionError intersect(d1, d2)
+            @test_throws AssertionError setdiff(d1, d2)
+            @test_throws AssertionError vcat(d1, d2)
         end
 
         @testset for f in [

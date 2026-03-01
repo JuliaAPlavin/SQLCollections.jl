@@ -40,6 +40,7 @@ colnames(dbc::SQLCollection) = colnames(dbc.query; dbc.conn.catalog)
 colnames(q; catalog=nothing) = keys(q.label_map)
 colnames(q::FunSQL.SQLNode; kwargs...) = colnames(q[]; kwargs...)
 colnames(q::FunSQL.WhereNode; catalog) = colnames(q.over; catalog)
+colnames(q::FunSQL.AppendNode; catalog) = colnames(q.over; catalog)
 colnames(q::FunSQL.FromNode; catalog) =
 	if q.source isa Symbol
 		catalog[q.source::Symbol].columns |> keys
