@@ -637,6 +637,53 @@ end
     end
 end
 
+@testitem "joins" begin
+    using DuckDB
+    using FlexiJoins
+    using DataManipulation
+
+    db = DuckDB.DB()
+
+    # Set up SQL table: orders
+    orders_data = [(id=1, customer_id=10, amount=100.0), (id=2, customer_id=20, amount=200.0), (id=3, customer_id=10, amount=50.0)]
+    copy!(SQLCollection(db, :orders), orders_data)
+    orders = SQLCollection(db, :orders)
+
+    # In-memory data: customers
+    customers = [(id=10, name="Alice"), (id=20, name="Bob"), (id=30, name="Charlie")]
+
+    # Test all join types: inner/left/right/outer
+    for joinfunc in [innerjoin, leftjoin, rightjoin, outerjoin]
+        # in-memory × SQL: different key columns
+        result_sql = joinfunc((; C=customers, O=orders), by_key(@o(_.id), @o(_.customer_id)))
+        result_mem = joinfunc((; C=customers, O=collect(orders)), by_key(@o(_.id), @o(_.customer_id)))
+        @test issetequal(collect(result_sql), result_mem)
+
+        # SQL × SQL
+        copy!(SQLCollection(db, :customers), customers)
+        cust_sql = SQLCollection(db, :customers)
+        result_sql2 = joinfunc((; C=cust_sql, O=orders), by_key(@o(_.id), @o(_.customer_id)))
+        @test issetequal(collect(result_sql2), result_mem)
+    end
+
+    # by_key with same column name
+    data_a = [(k=1, x="a"), (k=2, x="b")]
+    data_b = [(k=1, y=10.0), (k=3, y=30.0)]
+    copy!(SQLCollection(db, :tbl_a), data_a)
+    copy!(SQLCollection(db, :tbl_b), data_b)
+    tbl_a = SQLCollection(db, :tbl_a)
+    tbl_b = SQLCollection(db, :tbl_b)
+
+    for joinfunc in [innerjoin, leftjoin, rightjoin, outerjoin]
+        result_sql = joinfunc((; A=data_a, B=tbl_b), by_key(@o(_.k)))
+        result_mem = joinfunc((; A=data_a, B=data_b), by_key(@o(_.k)))
+        @test issetequal(collect(result_sql), result_mem)
+
+        result_sql2 = joinfunc((; A=tbl_a, B=tbl_b), by_key(@o(_.k)))
+        @test issetequal(collect(result_sql2), result_mem)
+    end
+end
+
 @testitem "_" begin
     import Aqua
     Aqua.test_all(SQLCollections; ambiguities=(;broken=true))

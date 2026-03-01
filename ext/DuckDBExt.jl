@@ -1,7 +1,9 @@
 module DuckDBExt
 
 using DuckDB
-import SQLCollections: _copy_impl!, _quote_ident, rowtable
+using Tables
+using FunSQL: SQLTable, From
+import SQLCollections: SQLCollection, _copy_impl!, _quote_ident, _tablename, rowtable, _register_virtual, _unregister_virtual
 
 function _copy_impl!(conn::DuckDB.DB, rows, tblname::Symbol, dialect)
 	qi(x) = _quote_ident(x, dialect)
@@ -19,6 +21,21 @@ function _copy_impl!(conn::DuckDB.DB, rows, tblname::Symbol, dialect)
 	finally
 		DuckDB.unregister_table(conn, tmp_tblname)
 	end
+end
+
+function _register_virtual(conn, data)
+	conn.raw isa DuckDB.DB || error("_register_virtual is only supported for DuckDB connections")
+	name = Symbol(join(rand('a':'z', 30)))
+	DuckDB.register_table(conn.raw, data, String(name))
+	col_names = collect(map(Symbol, Tables.columnnames(Tables.columns(data))))
+	conn.catalog.tables[name] = SQLTable(name=name, columns=col_names)
+	return SQLCollection(conn, From(name))
+end
+
+function _unregister_virtual(dbc::SQLCollection)
+	name = _tablename(dbc)
+	DuckDB.unregister_table(dbc.conn.raw, String(name))
+	delete!(dbc.conn.catalog.tables, name)
 end
 
 end

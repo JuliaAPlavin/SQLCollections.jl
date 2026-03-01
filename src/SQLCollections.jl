@@ -79,6 +79,12 @@ include("modification.jl")
 include("grouped.jl")
 include("dictionary.jl")
 
+function _register_virtual end
+function _unregister_virtual end
+
+_to_sql(conn, x::SQLCollection) = x
+_to_sql(conn, x) = _register_virtual(conn, x)
+
 DBInterface.transaction(f, dbc::SQLCollection) = DBInterface.transaction(f, dbc.conn)
 DBInterface.transaction(f, dbc::SQLDictionary) = DBInterface.transaction(f, dbc.coll)
 
