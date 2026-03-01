@@ -42,7 +42,8 @@ end
 function _side_optic(side::Symbol, cols::Tuple, ::Keep)
     flat_cols = map(col -> Symbol(side, :_, col), cols)
     props = NamedTuple{flat_cols}(ntuple(_ -> Placeholder(), length(cols)))
-    func = row -> _keep_side_func(row, Val(cols), Val(flat_cols))
+    vc, vfc = Val(cols), Val(flat_cols)
+    func = row -> _keep_side_func(row, vc, vfc)
     PropertyFunction(props, func, nothing)
 end
 
