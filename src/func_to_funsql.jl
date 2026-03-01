@@ -51,9 +51,10 @@ func_to_funsql(f::AccessorsExtra.FixArgs{typeof(*)}, arg) = Fun.concat(map(a -> 
 
 
 # string search: like, regex
-func_to_funsql(f::Base.Fix2{typeof(startswith),<:AbstractString}, arg) = Fun.like(arg, "$(_escape_for_like(f.x))%")
-func_to_funsql(f::Base.Fix2{typeof(endswith),<:AbstractString}, arg) = Fun.like(arg, "%$(_escape_for_like(f.x))")
-func_to_funsql(f::Base.Fix2{typeof(contains),<:AbstractString}, arg) = Fun.like(arg, "%$(_escape_for_like(f.x))%")
+_like_escaped(arg, pattern) = Fun."(? LIKE ? ESCAPE '\\')"(arg, pattern)
+func_to_funsql(f::Base.Fix2{typeof(startswith),<:AbstractString}, arg) = _like_escaped(arg, "$(_escape_for_like(f.x))%")
+func_to_funsql(f::Base.Fix2{typeof(endswith),<:AbstractString}, arg) = _like_escaped(arg, "%$(_escape_for_like(f.x))")
+func_to_funsql(f::Base.Fix2{typeof(contains),<:AbstractString}, arg) = _like_escaped(arg, "%$(_escape_for_like(f.x))%")
 _escape_for_like(s::AbstractString) = replace(s, '%' => "\\%", '_' => "\\_")
 
 # func_to_funsql(f::Base.Fix2{typeof(contains),<:Regex}, arg) = Fun.regexp_like(arg, string(f.x))

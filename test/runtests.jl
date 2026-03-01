@@ -235,6 +235,31 @@ using TestItemRunner
     end
 end
 
+@testitem "like escape" begin
+    using SQLite, DuckDB
+    using DataManipulation
+
+    data = [(s="100% done",), (s="100 done",), (s="hello_world",), (s="helloXworld",), (s="abc",)]
+
+    @testset for db in [
+        SQLite.DB(),
+        DuckDB.DB(),
+    ]
+        tbl = SQLCollection(db, :test_like)
+        copy!(tbl, data)
+        tbl = SQLCollection(db, :test_like)
+
+        @testset for f in [
+            (@f filter(@o startswith(_.s, "100%"))),
+            (@f filter(@o endswith(_.s, "% done"))),
+            (@f filter(@o contains(_.s, "o_w"))),
+            (@f filter(@o contains(_.s, "0%"))),
+        ]
+            @test issetequal(collect(f(tbl)), f(data))
+        end
+    end
+end
+
 @testitem "groups" begin
     using SQLite, DuckDB
     using DataManipulation
