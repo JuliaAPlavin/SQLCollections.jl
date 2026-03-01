@@ -172,6 +172,21 @@ using TestItemRunner
                 d2 = @p data filter(@o _.i <= 3) map(@o (x=_.i > 5,))
                 setdiff(d1, d2)
             end,
+            function (data)
+                d1 = @p data filter(@o _.i > 3) map(@o (a=_.i, b=_.j))
+                d2 = @p data filter(@o _.i < 8) map(@o (a=_.i, b=_.j))
+                intersect(d1, d2)
+            end,
+            function (data)
+                d1 = @p data filter(@o _.i > 3) map(@o (a=_.i, b=_.j))
+                d2 = @p data filter(@o _.i < 8) map(@o (a=_.i, b=_.j))
+                union(d1, d2)
+            end,
+            function (data)
+                d1 = @p data filter(@o _.i > 3) map(@o (a=_.i, b=_.j))
+                d2 = @p data filter(@o _.i < 8) map(@o (a=_.i, b=_.j))
+                setdiff(d1, d2)
+            end,
         ]
             if f isa Tuple
                 dbs, f = f
