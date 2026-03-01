@@ -203,7 +203,7 @@ using TestItemRunner
         @testset "map_later" begin
             f = @o (i=_.i, b=complex(_.i, _.j))
             mc = SQLCollections.map_later(f, tbl)
-            ref = map(f, data)
+            ref = map(r -> (s=r.s, d=r.d, dt=r.dt, i=r.i, b=complex(r.i, r.j)), data)
 
             @test collect(mc) == ref
             @test collect(filter(@o(_.i > 5), mc)) == filter(@o(_.i > 5), ref)
@@ -211,6 +211,24 @@ using TestItemRunner
             @test collect(first(mc, 3)) == first(ref, 3)
             @test collect(first(filter(@o(_.i > 3), mc), 2)) == first(filter(@o(_.i > 3), ref), 2)
             @test collect(Iterators.drop(mc, 7)) == collect(Iterators.drop(ref, 7))
+
+            f = r -> r.i + r.j
+            mc = SQLCollections.map_later(f, tbl)
+            ref = map(f, data)
+            @test collect(mc) == ref
+            @test collect(mc) isa Vector{Float64}
+
+            f = r -> (a=r.i, b=complex(r.i, r.j))
+            mc = SQLCollections.map_later(f, tbl)
+            ref = map(f, data)
+            @test collect(mc) == ref
+            @test collect(filter(@o(_.i > 5), mc)) == filter(@o(_.a > 5), ref)
+
+            f = @o (aaa=_.i, b=complex(_.i, _.j))
+            mc = SQLCollections.map_later(f, tbl)
+            ref = map(r -> (s=r.s, d=r.d, dt=r.dt, aaa=r.i, b=complex(r.i, r.j)), data)
+            @test collect(mc) == ref
+            @test collect(filter(@o(_.i > 5), mc)) == filter(@o(_.aaa > 5), ref)
         end
     end
 end
