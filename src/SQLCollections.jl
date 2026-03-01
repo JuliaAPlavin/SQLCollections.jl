@@ -28,6 +28,14 @@ SQLCollection(conn, tbl::FunSQL.AbstractSQLNode) = SQLCollection(
 
 SQLCollection(conn, tbl::Union{Symbol,AbstractString}) = SQLCollection(conn, From(Symbol(tbl)))
 
+function _quote_ident(name::Symbol, dialect::FunSQL.SQLDialect)
+    ctx = FunSQL.SerializeContext(dialect)
+    FunSQL.serialize!(name, ctx)
+    return String(take!(ctx.io))
+end
+_quote_ident(name::Symbol, conn::FunSQL.SQLConnection) = _quote_ident(name, conn.catalog.dialect)
+_quote_ident(name::Symbol, coll::SQLCollection) = _quote_ident(name, coll.conn)
+
 colnames(dbc::SQLCollection) = colnames(dbc.query; dbc.conn.catalog)
 colnames(q; catalog=nothing) = keys(q.label_map)
 colnames(q::FunSQL.SQLNode; kwargs...) = colnames(q[]; kwargs...)

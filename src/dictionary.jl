@@ -12,50 +12,52 @@ function SQLDictionary{I,T}(coll::SQLCollection) where {I,T}
             NamedTuple{_colnames(:v_, T), Tuple{_coltypes(T)...}})
     end
     colnames = (_colnames(:k_, I)..., _colnames(:v_, T)...)
+    qi(x) = _quote_ident(x, coll)
+    qtbl = qi(_tablename(coll))
     prepared = (
         haskey=DBInterface.prepare(coll.conn, """
             SELECT 1
-            FROM $(_tablename(coll))
-            WHERE $(@p _colnames(:k_, I) map("$_ = ?") join(__, " AND "))
+            FROM $qtbl
+            WHERE $(@p _colnames(:k_, I) map("$(qi(_)) = ?") join(__, " AND "))
             LIMIT 2
             """),
         getindex=DBInterface.prepare(coll.conn, """
-            SELECT $(@p _colnames(:v_, T) join(__, ", "))
-            FROM $(_tablename(coll))
-            WHERE $(@p _colnames(:k_, I) map("$_ = ?") join(__, " AND "))
+            SELECT $(@p _colnames(:v_, T) map(qi) join(__, ", "))
+            FROM $qtbl
+            WHERE $(@p _colnames(:k_, I) map("$(qi(_)) = ?") join(__, " AND "))
             LIMIT 2
             """),
         insert=DBInterface.prepare(coll.conn, """
             INSERT INTO
-            $(_tablename(coll)) ($(join(colnames, ", ")))
+            $qtbl ($(join(qi.(colnames), ", ")))
             VALUES ($(join(fill("?", length(colnames)), ", ")))
             """),
         delete=DBInterface.prepare(coll.conn, """
-            DELETE FROM $(_tablename(coll))
-            WHERE $(@p _colnames(:k_, I) map("$_ = ?") join(__, " AND "))
+            DELETE FROM $qtbl
+            WHERE $(@p _colnames(:k_, I) map("$(qi(_)) = ?") join(__, " AND "))
             RETURNING 1
             """),
         setindex=DBInterface.prepare(coll.conn, """
-            UPDATE $(_tablename(coll))
-            SET $(@p _colnames(:v_, T) map("$_ = ?") join(__, ", "))
-            WHERE $(@p _colnames(:k_, I) map("$_ = ?") join(__, " AND "))
+            UPDATE $qtbl
+            SET $(@p _colnames(:v_, T) map("$(qi(_)) = ?") join(__, ", "))
+            WHERE $(@p _colnames(:k_, I) map("$(qi(_)) = ?") join(__, " AND "))
             RETURNING 1
             """),
         getexcl=DBInterface.prepare(coll.conn, """
             INSERT INTO
-            $(_tablename(coll)) ($(join(colnames, ", ")))
+            $qtbl ($(join(qi.(colnames), ", ")))
             VALUES ($(join(fill("?", length(colnames)), ", ")))
-            ON CONFLICT ($(join(_colnames(:k_, I), ", ")))
+            ON CONFLICT ($(join(qi.(_colnames(:k_, I)), ", ")))
             DO UPDATE SET rowid = rowid
-            RETURNING $(join(_colnames(:v_, T), ", "))
+            RETURNING $(join(qi.(_colnames(:v_, T)), ", "))
             """),
         set=DBInterface.prepare(coll.conn, """
             INSERT INTO
-            $(_tablename(coll)) ($(join(colnames, ", ")))
+            $qtbl ($(join(qi.(colnames), ", ")))
             VALUES ($(join(fill("?", length(colnames)), ", ")))
-            ON CONFLICT ($(join(_colnames(:k_, I), ", ")))
+            ON CONFLICT ($(join(qi.(_colnames(:k_, I)), ", ")))
             DO UPDATE SET
-            $(@p _colnames(:v_, T) map("$_ = excluded.$_") join(__, ", "))
+            $(@p _colnames(:v_, T) map("$(qi(_)) = excluded.$(qi(_))") join(__, ", "))
             RETURNING 1
             """)
     )
@@ -205,7 +207,7 @@ _coltypes(T::Type) = (T,)
 
 function _create!(dbc::SQLCollection, Ts::Type...)
 	tblname = _tablename(dbc)
-    _create_impl!(dbc.conn.raw, tblname, Ts...)
+    _create_impl!(dbc.conn.raw, tblname, dbc.conn.catalog.dialect, Ts...)
 	return SQLCollection(dbc.conn.raw, tblname)
 end
 

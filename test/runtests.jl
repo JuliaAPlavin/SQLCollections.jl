@@ -502,6 +502,78 @@ end
     end
 end
 
+@testitem "reserved word names" begin
+    using SQLite, DuckDB
+
+    @testset for db in [
+        SQLite.DB(),
+        DuckDB.DB(),
+    ]
+        # SQLCollection with reserved-word table name
+        tbl = SQLCollection(db, :select)
+        copy!(tbl, [(a=1, b="x"), (a=2, b="y")])
+        tbl = SQLCollection(db, :select)
+        @test length(tbl) == 2
+        @test issetequal(collect(tbl), [(a=1, b="x"), (a=2, b="y")])
+        push!(tbl, (a=3, b="z"))
+        @test length(tbl) == 3
+        empty!(tbl)
+        @test isempty(tbl)
+        SQLCollections.drop!(tbl)
+    end
+
+    @testset for db in [
+        SQLite.DB(),
+        DuckDB.DB(),
+    ]
+        # SQLCollection with reserved-word column names
+        tbl = SQLCollection(db, :mytbl2)
+        copy!(tbl, [(; select=1, from="x"), (; select=2, from="y")])
+        tbl = SQLCollection(db, :mytbl2)
+        @test length(tbl) == 2
+        @test issetequal(collect(tbl), [(; select=1, from="x"), (; select=2, from="y")])
+        push!(tbl, (; select=3, from="z"))
+        @test length(tbl) == 3
+        empty!(tbl)
+        @test isempty(tbl)
+        SQLCollections.drop!(tbl)
+    end
+
+    @testset for db in [
+        SQLite.DB(),
+        # DuckDB.DB(),
+    ]
+        # SQLDictionary with reserved-word table name
+        dct = SQLDictionary{Int, String}(SQLCollection(db, :select))
+        insert!(dct, 1, "a")
+        insert!(dct, 2, "b")
+        @test dct[1] == "a"
+        @test haskey(dct, 2)
+        @test length(dct) == 2
+        dct[1] = "updated"
+        @test dct[1] == "updated"
+        delete!(dct, 2)
+        @test !haskey(dct, 2)
+        set!(dct, 3, "c")
+        @test get!(dct, 1, "default") == "updated"
+        empty!(dct)
+        @test isempty(dct)
+
+        # SQLDictionary with reserved-word NamedTuple field names
+        dct2 = SQLDictionary{@NamedTuple{select::Int}, @NamedTuple{from::String}}(db, :mytbl3)
+        insert!(dct2, (select=1,), (from="a",))
+        insert!(dct2, (select=2,), (from="b",))
+        @test dct2[(select=1,)] == (from="a",)
+        @test haskey(dct2, (select=2,))
+        dct2[(select=1,)] = (from="updated",)
+        @test dct2[(select=1,)] == (from="updated",)
+        delete!(dct2, (select=2,))
+        @test !haskey(dct2, (select=2,))
+        empty!(dct2)
+        @test isempty(dct2)
+    end
+end
+
 @testitem "_" begin
     import Aqua
     Aqua.test_all(SQLCollections; ambiguities=(;broken=true))
