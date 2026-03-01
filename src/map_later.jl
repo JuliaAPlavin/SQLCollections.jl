@@ -21,12 +21,12 @@ function Base.collect(mc::MappedLaterSQLCollection{<:AccessorsExtra.ContainerOpt
     comps = StructArrays.components(sa)
     kept_keys = Tuple(setdiff(keys(comps), consumed))
     kept = NamedTuple{kept_keys}(comps)
-    new_cols = map(_apply_optic_col(sa), mc.func.optics)
+    new_cols = map(o -> _apply_optic_col(o, sa), mc.func.optics)
     StructArray(merge(kept, new_cols))
 end
 
-_apply_optic_col(sa) = optic -> _apply_optic_col(optic, sa)
-_apply_optic_col(::PropertyLens{P}, sa) where {P} = getproperty(sa, P)
+_apply_optic_col(o::PropertyLens{P}, sa) where {P} = o(sa)
+_apply_optic_col(co::AccessorsExtra.ContainerOptic, sa) = StructArray(map(o -> _apply_optic_col(o, sa), co.optics))
 _apply_optic_col(optic, sa) = map(optic, sa)
 
 Base.filter(pred, mc::MappedLaterSQLCollection) = MappedLaterSQLCollection(mc.func, filter(pred, mc.coll))

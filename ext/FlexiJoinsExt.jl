@@ -5,7 +5,7 @@ import SQLCollections: SQLCollection, func_to_funsql, colnames, map_later, _to_s
 using FlexiJoins
 import FlexiJoins: _flexijoin, JoinCondition, ByKey, ByPred, CompositeCondition, Keep, Drop
 using FunSQL: Get, Join, Select, Fun
-using AccessorsExtra: @modify
+using AccessorsExtra: @modify, ContainerOptic, PropertyLens
 
 
 # --- Condition → FunSQL ON clause ---
@@ -33,19 +33,14 @@ cond_to_funsql(cond::CompositeCondition) = Fun.and(map(cond_to_funsql, cond.cond
 _find_sql_conn(datas) = (d = first(Iterators.filter(v -> v isa SQLCollection, values(datas))); d.conn)
 
 
-# --- Nest flat row into (A=(...), B=(...)) structure ---
+# --- Build nesting optic from side_cols ---
 
-function _make_nest_func(side_cols::NamedTuple{NS}) where {NS}
-    row -> begin
-        NamedTuple{NS}(map(NS) do side
-            cols = side_cols[side]
-            vals = map(cols) do col
-                row[Symbol(side, :_, col)]
-            end
-            # All missing → non-matching side in left/right/outer join → nothing
-            all(ismissing, vals) ? nothing : NamedTuple{cols}(vals)
-        end)
+function _make_nest_optic(side_cols::NamedTuple{NS}) where {NS}
+    inner_optics = map(NS) do side
+        cols = side_cols[side]
+        ContainerOptic(NamedTuple{cols}(map(col -> PropertyLens{Symbol(side, :_, col)}(), cols)))
     end
+    ContainerOptic(NamedTuple{NS}(inner_optics))
 end
 
 
@@ -108,8 +103,7 @@ function _sql_flexijoin(datas::NamedTuple{NS}, cond::JoinCondition; nonmatches=n
     sql_datas = NamedTuple{NS}(map(v -> _to_sql(conn, v), values(datas)))
 
     query, side_cols = _build_join_query(sql_datas, cond_norm, nm)
-    nest_func = _make_nest_func(side_cols)
-    return map_later(nest_func, query)
+    return map_later(_make_nest_optic(side_cols), query)
 end
 
 # Dispatch for at least one SQLCollection side
