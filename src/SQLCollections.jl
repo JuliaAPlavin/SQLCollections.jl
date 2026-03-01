@@ -64,6 +64,7 @@ Tables.columns(dbc::SQLCollection) = Tables.columns(DBInterface.execute(dbc.conn
 
 include("func_to_funsql.jl")
 include("readfuncs.jl")
+include("map_later.jl")
 include("two_collections.jl")
 include("modification.jl")
 include("grouped.jl")

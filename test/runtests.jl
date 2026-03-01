@@ -82,6 +82,7 @@ using TestItemRunner
             (@f map(@o (a=ifelse(_.i > 6, 1, 0), b=ismissing(_.i), c=!ismissing(_.i)))),
             (@f map(@o (a=missing, b=ifelse(_.i > 6, 1, missing), c=ismissing(ifelse(_.i > 6, 1, missing)), d=coalesce(ifelse(_.i > 6, 1, missing), 123)))),
             ([DuckDB.DB], @f map(@o (a=year(_.d), b=year(_.dt), c=month(_.d), d=day(_.dt), e=hour(_.dt), f=minute(_.dt), g=second(_.dt)))),
+            # (@f map(@o (_.i, k=_.j + 1))),
             (@f map(@o _[(:j, :i)])),
             (@f map(@o _[sr"d.*"])),
             (@f map(@o _[sr"i", sr"d(.*)" => ss"ddd\1"])),
@@ -198,6 +199,19 @@ using TestItemRunner
 
         # f = @f map(@o complex(_.i, _.j)) filter(@o real(_) > 3) map(abs)
         # @test f(tbl) == f(data)
+
+        @testset "map_later" begin
+            f = @o (i=_.i, b=complex(_.i, _.j))
+            mc = SQLCollections.map_later(f, tbl)
+            ref = map(f, data)
+
+            @test collect(mc) == ref
+            @test collect(filter(@o(_.i > 5), mc)) == filter(@o(_.i > 5), ref)
+            @test collect(sort(mc; by=(@o _.i), rev=true)) == sort(ref; by=(@o _.i), rev=true)
+            @test collect(first(mc, 3)) == first(ref, 3)
+            @test collect(first(filter(@o(_.i > 3), mc), 2)) == first(filter(@o(_.i > 3), ref), 2)
+            @test collect(Iterators.drop(mc, 7)) == collect(Iterators.drop(ref, 7))
+        end
     end
 end
 
