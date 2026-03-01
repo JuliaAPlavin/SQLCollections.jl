@@ -5,7 +5,7 @@ import SQLCollections: SQLCollection, func_to_funsql, colnames, map_later, _to_s
 using FlexiJoins
 import FlexiJoins: _flexijoin, JoinCondition, ByKey, ByPred, CompositeCondition, Keep, Drop
 using FunSQL: Get, Join, Select, Fun
-using AccessorsExtra: @modify, ContainerOptic, PropertyLens
+using AccessorsExtra: @modify, ContainerOptic, PropertyLens, PropertyFunction, Placeholder
 
 
 # --- Condition → FunSQL ON clause ---
@@ -35,10 +35,27 @@ _find_sql_conn(datas) = (d = first(Iterators.filter(v -> v isa SQLCollection, va
 
 # --- Build nesting optic from side_cols ---
 
-function _make_nest_optic(side_cols::NamedTuple{NS}) where {NS}
-    inner_optics = map(NS) do side
-        cols = side_cols[side]
-        ContainerOptic(NamedTuple{cols}(map(col -> PropertyLens{Symbol(side, :_, col)}(), cols)))
+function _side_optic(side::Symbol, cols::Tuple, ::Drop)
+    ContainerOptic(NamedTuple{cols}(map(col -> PropertyLens{Symbol(side, :_, col)}(), cols)))
+end
+
+function _side_optic(side::Symbol, cols::Tuple, ::Keep)
+    flat_cols = map(col -> Symbol(side, :_, col), cols)
+    props = NamedTuple{flat_cols}(ntuple(_ -> Placeholder(), length(cols)))
+    func = row -> _keep_side_func(row, Val(cols), Val(flat_cols))
+    PropertyFunction(props, func, nothing)
+end
+
+_keep_side_func(row, ::Val{cols}, ::Val{flat_cols}) where {cols, flat_cols} = let
+    vals = row[flat_cols]
+    all(ismissing, values(vals)) ? nothing : NamedTuple{cols}(values(vals))
+end
+
+function _make_nest_optic(side_cols::NamedTuple{NS}, nonmatches) where {NS}
+    # Keep on side X means non-matching X rows are kept → the OTHER side gets missings
+    other_nm = reverse(nonmatches)
+    inner_optics = map(NS, other_nm) do side, nm
+        _side_optic(side, side_cols[side], nm)
     end
     ContainerOptic(NamedTuple{NS}(inner_optics))
 end
@@ -103,7 +120,7 @@ function _sql_flexijoin(datas::NamedTuple{NS}, cond::JoinCondition; nonmatches=n
     sql_datas = NamedTuple{NS}(map(v -> _to_sql(conn, v), values(datas)))
 
     query, side_cols = _build_join_query(sql_datas, cond_norm, nm)
-    return map_later(_make_nest_optic(side_cols), query)
+    return map_later(_make_nest_optic(side_cols, nm), query)
 end
 
 # Dispatch for at least one SQLCollection side
