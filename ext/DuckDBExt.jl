@@ -3,16 +3,6 @@ module DuckDBExt
 using DuckDB
 import SQLCollections: _copy_impl!, rowtable
 
-# XXX: should be upstreamed in https://github.com/duckdb/duckdb/pull/17585
-DuckDB.DB(file; readonly::Bool=false) =
-	if readonly
-		cnf = DuckDB.Config()
-		DuckDB.set_config(cnf, "access_mode", "READ_ONLY")
-		DuckDB.DB(file, cnf)
-	else
-		DuckDB.DB(file)
-	end
-
 function _copy_impl!(conn::DuckDB.DB, rows, tblname::Symbol)
 	tmp_tblname = String(rand('a':'z', 50))
 	DuckDB.register_table(conn, rows, tmp_tblname)
