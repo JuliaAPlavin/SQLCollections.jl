@@ -188,7 +188,6 @@ function _to_tup(::Type{<:NamedTuple{KS}}, x::NamedTuple{KSx}) where {KS, KSx}
 end
 function _to_tup(::Type{T}, x) where {T}
     @assert !(T <: NamedTuple || T <: Tuple)
-    @assert !(x isa NamedTuple || x isa Tuple)
     (x,)
 end
 _to_tup(Tx, x, Ty, y) = (_to_tup(Tx, x)..., _to_tup(Ty, y)...)
@@ -196,7 +195,7 @@ _to_tup(Tx, x, Ty, y) = (_to_tup(Tx, x)..., _to_tup(Ty, y)...)
 _extract_values(::Type{<:NamedTuple}, x) = x
 _extract_values(::Type{T}, x) where {T} = map(nt -> nt._, x)
 _extract_value(::Type{<:NamedTuple}, x::NamedTuple) = x
-_extract_value(::Type{T}, x::@NamedTuple{_::T}) where {T} = x._
+_extract_value(::Type{T}, x::NamedTuple{(:_,)}) where {T} = x._::T
 
 
 _colnames(prefix::Symbol, ::Type{<:NamedTuple{KS}}) where {KS} = Symbol.(prefix, KS)

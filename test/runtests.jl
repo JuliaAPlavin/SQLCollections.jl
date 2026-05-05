@@ -556,6 +556,86 @@ end
     end
 end
 
+@testitem "dictionary Any types" begin
+    using SQLite, DuckDB
+
+    @testset for db in [
+        SQLite.DB(),
+        # DuckDB.DB(),
+    ]
+        dct = SQLDictionary{Any,Any}(SQLCollection(db, :mytbl))
+        @test isempty(dct)
+        @test length(dct) == 0
+
+        # Insert heterogeneous (key, value) pairs into a single dictionary
+        insert!(dct, 1, "string value")
+        insert!(dct, "key str", 42)
+        insert!(dct, (a=1, b=2), [1.0, 2.0, 3.0])
+        insert!(dct, [10, 20], (x=1, y="hi"))
+        insert!(dct, 3.14, 2.71)
+
+        @test length(dct) == 5
+
+        # Round-trip via getindex preserves the original Julia type
+        @test dct[1] == "string value"
+        @test dct["key str"] == 42
+        @test dct[(a=1, b=2)] == [1.0, 2.0, 3.0]
+        @test dct[[10, 20]] == (x=1, y="hi")
+        @test dct[3.14] == 2.71
+        @test_throws KeyError(99) dct[99]
+
+        # haskey across mixed key types
+        @test haskey(dct, 1)
+        @test haskey(dct, "key str")
+        @test haskey(dct, (a=1, b=2))
+        @test haskey(dct, [10, 20])
+        @test !haskey(dct, 99)
+        @test !haskey(dct, "missing")
+
+        # collect returns all values; order across heterogeneous BLOB-stored keys is not guaranteed
+        @test issetequal(collect(dct), ["string value", 42, [1.0, 2.0, 3.0], (x=1, y="hi"), 2.71])
+        @test issetequal(collect(keys(dct)), [1, "key str", (a=1, b=2), [10, 20], 3.14])
+
+        # setindex! can replace a value with a different concrete type
+        dct[1] = [99, 100]
+        @test dct[1] == [99, 100]
+        @test_throws KeyError(99) dct[99] = "new"
+
+        # delete!
+        delete!(dct, "key str")
+        @test_throws KeyError("key str") delete!(dct, "key str")
+        @test !haskey(dct, "key str")
+        @test length(dct) == 4
+
+        # set! inserts when missing, replaces when present (across types)
+        set!(dct, "fresh", (p=1,))
+        @test dct["fresh"] == (p=1,)
+        set!(dct, (a=1, b=2), "no longer a vector")
+        @test dct[(a=1, b=2)] == "no longer a vector"
+
+        # unset! is idempotent
+        unset!(dct, "fresh")
+        unset!(dct, "never existed")
+        @test !haskey(dct, "fresh")
+
+        # get! with mixed types
+        @test get!(dct, [10, 20], (x=0, y="default")) == (x=1, y="hi")
+        @test get!(dct, "brand new", [7, 8, 9]) == [7, 8, 9]
+        @test dct["brand new"] == [7, 8, 9]
+
+        # get with default value, including callable default
+        @test get(dct, 1, "fallback") == [99, 100]
+        @test get(dct, "missing key", "fallback") == "fallback"
+        @test get(() -> "callable", dct, 1) == [99, 100]
+        @test get(() -> "callable", dct, "missing key") == "callable"
+
+        # empty!
+        empty!(dct)
+        @test isempty(dct)
+        @test length(dct) == 0
+    end
+end
+
 @testitem "edge cases" begin
     using SQLite, DuckDB
 

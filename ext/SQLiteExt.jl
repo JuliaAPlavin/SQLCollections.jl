@@ -19,11 +19,12 @@ function _create_impl!(conn::SQLite.DB, tblname::Symbol, dialect, Tk::Type{<:Nam
     names = (fieldnames(Tk)..., fieldnames(Tv)...)
     types = (fieldtypes(Tk)..., fieldtypes(Tv)...)
     coldefs = names .=> SQLite.sqlitetype.(types)
+    strict = Any in types ? "" : "STRICT"
     SQLite.execute(conn,
     """CREATE TABLE $(qi(tblname)) (
         $(@p coldefs map("$(qi(_[1])) $(_[2])") join(__, ", ")),
         PRIMARY KEY ($(join(qi.(fieldnames(Tk)), ", ")))
-    ) STRICT""")
+    ) $strict""")
 end
 
 end
